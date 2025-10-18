@@ -1,0 +1,20 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "modal",
+  "type": "registry:ui",
+  "title": "Modal",
+  "description": "A group of function for showing modal",
+  "dependencies": [
+    "@ebay/nice-modal-react"
+  ],
+  "registryDependencies": [
+    "dialog"
+  ],
+  "files": [
+    {
+      "path": "registry/ui/modal.tsx",
+      "content": "\"use client\";\r\n\r\nimport {ReactNode} from \"react\";\r\nimport NiceModal, {useModal} from \"@ebay/nice-modal-react\";\r\nimport {Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle,} from \"@/components/ui/dialog\";\r\nimport {Button} from \"@/components/ui/button\";\r\n\r\ntype CustomModalProps = {\r\n    content: ReactNode;\r\n    title?: string;\r\n    showClose?: boolean;\r\n};\r\n\r\nconst CustomModal = NiceModal.create(({content, title, showClose = true}: CustomModalProps) => {\r\n    const modal = useModal();\r\n    return (\r\n        <Dialog open={modal.visible} onOpenChange={(v) => !v && modal.hide()}>\r\n            <DialogContent className=\"sm:max-w-md\">\r\n                {title && (\r\n                    <DialogHeader>\r\n                        <DialogTitle>{title}</DialogTitle>\r\n                    </DialogHeader>\r\n                )}\r\n\r\n                <div className=\"py-2\">{content}</div>\r\n\r\n                {showClose && (\r\n                    <DialogFooter>\r\n                        <Button variant=\"outline\" onClick={() => modal.hide()}>\r\n                            关闭\r\n                        </Button>\r\n                    </DialogFooter>\r\n                )}\r\n            </DialogContent>\r\n        </Dialog>\r\n    );\r\n});\r\n\r\nexport default CustomModal;\r\n\r\n// 工具函数封装\r\nexport function showCustomModal(\r\n    content: ReactNode,\r\n    options?: { title?: string; showClose?: boolean }\r\n) {\r\n    return NiceModal.show(CustomModal, {content, ...options});\r\n}\r\n",
+      "type": "registry:ui"
+    }
+  ]
+}

@@ -1,0 +1,55 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry.json",
+  "name": "aqua-shadcn-ui",
+  "homepage": "",
+  "items": [
+    {
+      "name": "time-picker",
+      "type": "registry:ui",
+      "title": "Time Picker",
+      "description": "Component to let users select a time period",
+      "registryDependencies": [
+        "slider"
+      ],
+      "files": [
+        {
+          "path": "registry/ui/time-picker.tsx",
+          "type": "registry:ui"
+        }
+      ]
+    },
+    {
+      "name": "opalus-dialog-content",
+      "type": "registry:ui",
+      "title": "Opalus Dialog Content",
+      "description": "A better DialogContent which can use be set if the default X button is shown",
+      "registryDependencies": [
+        "dialog"
+      ],
+      "files": [
+        {
+          "path": "registry/ui/opalus-dialog-content.tsx",
+          "type": "registry:ui"
+        }
+      ]
+    },
+    {
+      "name": "modal",
+      "type": "registry:ui",
+      "title": "Modal",
+      "description": "A group of function for showing modal",
+      "dependencies": [
+        "@ebay/nice-modal-react"
+      ],
+      "registryDependencies": [
+        "dialog"
+      ],
+      "files": [
+        {
+          "path": "registry/ui/modal.tsx",
+          "type": "registry:ui"
+        }
+      ]
+    }
+  ]
+}

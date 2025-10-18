@@ -1,0 +1,17 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "time-picker",
+  "type": "registry:ui",
+  "title": "Time Picker",
+  "description": "Component to let users select a time period",
+  "registryDependencies": [
+    "slider"
+  ],
+  "files": [
+    {
+      "path": "registry/ui/time-picker.tsx",
+      "content": "'use client'\r\n\r\nimport React, {\r\n    createContext, type HTMLAttributes,\r\n    useContext,\r\n    useEffect,\r\n    useState,\r\n} from \"react\"\r\n\r\nimport { cn } from \"@/lib/utils\"\r\nimport { Slider } from \"@/components/ui/slider\"\r\n\r\nconst TimePickerContext = createContext({\r\n  time: 0,\r\n  timeReducer: (() => {}) as (value: number) => void,\r\n})\r\ntype TimePickerContainerProps = {\r\n  children?: React.ReactNode\r\n  onTimeChange?: (value: number) => void\r\n}\r\nconst TimePickerContainer: React.FC<TimePickerContainerProps> = (props) => {\r\n  const [time, setTime] = useState(0)\r\n  return (\r\n    <TimePickerContext.Provider\r\n      value={{\r\n        time: time,\r\n        timeReducer: (value) => {\r\n          setTime((prev) => prev + value)\r\n        },\r\n      }}\r\n    >\r\n      <TimePickerTrigger {...props} />\r\n    </TimePickerContext.Provider>\r\n  )\r\n}\r\nconst TimePickerTrigger = (props: TimePickerContainerProps) => {\r\n  const timePickerContext = useContext(TimePickerContext)\r\n  useEffect(() => {\r\n    props.onTimeChange?.(timePickerContext.time)\r\n  }, [props, timePickerContext])\r\n\r\n  return <>{props.children}</>\r\n}\r\ntype TimePickerProps = {\r\n  timeMilliseconds: number\r\n  step?: number\r\n  minValue?: number\r\n  maxValue: number\r\n  prefixLabel?: ((value: number) => React.ReactNode) | React.ReactNode\r\n  suffixLabel?: ((value: number) => React.ReactNode) | React.ReactNode\r\n  value?: number\r\n  onValueChange?: (value: number) => void\r\n} & HTMLAttributes<HTMLDivElement>\r\nconst TimePicker = ({\r\n  timeMilliseconds = 1,\r\n  step = 1,\r\n  maxValue = 1000,\r\n  minValue = 0,\r\n  value = 0,\r\n  onValueChange,\r\n  prefixLabel,\r\n  suffixLabel,\r\n  ...props\r\n}: TimePickerProps) => {\r\n  const timePickerContext = useContext(TimePickerContext)\r\n  const [timeValue, setTimeValue] = useState(value - minValue)\r\n  useEffect(() => {\r\n    setTimeValue(value - minValue)\r\n  }, [value])\r\n  useEffect(() => {\r\n    onValueChange?.(timeValue + minValue)\r\n    timePickerContext.timeReducer((timeValue + minValue) * timeMilliseconds)\r\n    return () => {\r\n      timePickerContext.timeReducer(-(timeValue + minValue) * timeMilliseconds)\r\n    }\r\n  }, [timeValue])\r\n  const prefix =\r\n    typeof prefixLabel === \"function\"\r\n      ? prefixLabel(timeValue + minValue)\r\n      : prefixLabel\r\n  const suffix =\r\n    typeof suffixLabel === \"function\"\r\n      ? suffixLabel(timeValue + minValue)\r\n      : suffixLabel\r\n  return (\r\n    <div\r\n      {...props}\r\n      className={cn(\r\n        \"flex h-fit w-full flex-row items-center justify-around gap-2\",\r\n        props.className\r\n      )}\r\n    >\r\n      {prefix}\r\n      <Slider\r\n        defaultValue={[timeValue]}\r\n        max={maxValue - minValue}\r\n        step={step}\r\n        className={cn(\"\")}\r\n        onValueChange={(v) => {\r\n          setTimeValue(v[0])\r\n        }}\r\n      />\r\n      {suffix}\r\n    </div>\r\n  )\r\n}\r\nexport { TimePicker, TimePickerContainer }\r\n",
+      "type": "registry:ui"
+    }
+  ]
+}
