@@ -1,9 +1,10 @@
 "use client";
-import type {ReactNode} from "react";
+import React, {type ReactNode} from "react";
 import NiceModal, {useModal} from "@ebay/nice-modal-react";
 import {Dialog, DialogClose, DialogContent, DialogHeader, DialogTitle} from "@/components/ui/dialog";
 import {Button} from "@/components/ui/button.tsx";
 import {AlertCircle} from "lucide-react";
+import {Input} from "@/components/ui/input.tsx";
 
 type CustomModalProps = {
     content: (close: (result?: any) => void) => ReactNode;
@@ -39,7 +40,13 @@ export type ConfirmModalOptions = {
     confirmButtonContent?: ReactNode;
     cancelButtonContent?: ReactNode;
 } & ModalOptions;
-
+export type PromptModalOptions = {
+    message?: ReactNode | ReactNode[];
+    defaultValue?: string;
+    placeholder?: string;
+    confirmButtonContent?: ReactNode;
+    cancelButtonContent?: ReactNode;
+} & ModalOptions;
 
 export const modal = {
     custom: <T = any>(
@@ -86,6 +93,27 @@ export const modal = {
                             {options.confirmButtonContent || <Button>Confirm</Button>}
                         </DialogClose>
                     </div>
+                </div>
+            </DialogContent>
+        })
+    },
+    prompt: (options: PromptModalOptions) => {
+        return modal.custom<string | null>((close) => {
+            const [inputValue, setInputValue] = React.useState<string>(options.defaultValue || "");
+            return <DialogContent showCloseButton={options.hasCloseButton || true}>
+                <DialogHeader>
+                    <DialogTitle className={"flex flex-row items-center gap-2"}>
+                        {(options.showTitleIcon || true) && (options.titleIcon || <AlertCircle className={"h-5 w-5"}/>)}
+                        {options.title || "Prompt"}
+                    </DialogTitle>
+                </DialogHeader>
+                <div className={"flex flex-col gap-3 items-center"}>
+                    <div>{options.message}</div>
+                    <Input placeholder={options.placeholder} value={inputValue}
+                           onChange={e => setInputValue(e.target.value)}/>
+                    <DialogClose asChild onClick={() => close(inputValue)}>
+                        {options.confirmButtonContent || <Button>Confirm</Button>}
+                    </DialogClose>
                 </div>
             </DialogContent>
         })
