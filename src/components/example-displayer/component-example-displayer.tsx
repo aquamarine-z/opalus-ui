@@ -91,13 +91,13 @@ export function ComponentExampleDisplayer({
                 </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="preview" className="w-full h-fit">
+            <TabsContent  value="preview" className="w-full h-fit !mt-0">
                 <PreviewWrapper>
                     {Comp ? <Comp/> : <p>Loading...</p>}
                 </PreviewWrapper>
             </TabsContent>
 
-            <TabsContent value="code" className="w-full h-fit">
+            <TabsContent  value="code" className="w-full h-fit !mt-0">
                 <div
                     className="w-full h-96 flex items-center overflow-hidden justify-center border rounded-md p-0"
                 >

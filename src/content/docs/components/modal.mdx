@@ -1,8 +1,8 @@
-
 ---
 title: Modal
 description: A group of function for showing modal.
 ---
+
 import {ComponentExampleDisplayer} from "../../../components/example-displayer/component-example-displayer.js";
 import {InstallationGuide} from "../../../components/installation-guide.js";
 
@@ -13,3 +13,126 @@ import {InstallationGuide} from "../../../components/installation-guide.js";
 ## Installation
 
 <InstallationGuide componentName="modal" client:load/>
+
+## Variants
+
+### Custom Modal (modal.custom)
+The modal.custom function allows you to create a custom modal with your own content and actions.
+
+<ComponentExampleDisplayer componentName={"modal"} exampleName={"variant-custom"} client:load/>
+
+#### Signature
+
+```tsx
+modal.custom: <T = any>(
+  content: (close: (result?: T) => void) => ReactNode
+) => Promise<T | undefined>;
+```
+
+#### Parameters
+
+**`content: (close: (result?: T) => void) => ReactNode`**
+A function that returns the React content of the modal. It receives a `close` function that you can call with any value to close the modal and return that value to the caller.
+
+#### Returns
+
+**`Promise<T | undefined>`**
+A promise that resolves with the value passed to `close`. If the modal is cancelled or no value is passed, it resolves to `undefined`.
+
+#### Notes
+
+- The modal content is fully customizable. You can use any React hooks (`useState`, `useEffect`, etc.) inside the content function.
+- You can return any type `T` from `close`, such as strings, objects, or booleans.
+- This pattern allows you to `await` the modal like a standard async function.
+- Notice that you can **only** use the **Shadcn DialogContent** component or other components adapted from it for the return value of the argument function.
+
+
+### Alert Modal (modal.alert)
+
+The `modal.alert` function allows you to show a simple alert modal with a title, message, and a close button. It internally uses `modal.custom` and returns a `Promise` that resolves when the modal is closed.
+
+<ComponentExampleDisplayer componentName={"modal"} exampleName={"variant-alert"} client:load/>
+
+#### Signature
+
+```tsx
+export type ModalOptions = {
+    hasCloseButton?: boolean;
+    title?: ReactNode;
+    titleIcon?: ReactNode;
+    showTitleIcon?: boolean;
+}
+export type AlertModalOptions = {
+    message?: ReactNode | ReactNode[];
+    closeButtonContent?: ReactNode;
+} & ModalOptions;
+modal.alert: (options: AlertModalOptions) => Promise<null>;
+```
+#### Parameters
+
+**`options: AlertModalOptions`**
+An object with the following optional properties:
+
+- `title?: string` – The title of the alert. Defaults to `"Alert"`.
+- `message: ReactNode` – The main message content of the alert.
+- `closeButtonContent?: ReactNode` – Custom content for the close button. Defaults to an X button at the right top.
+
+#### Returns
+
+**`Promise<null>`**
+A promise that resolves when the alert modal is closed. It does not return any meaningful value.
+
+#### Notes
+
+- The alert modal is fully controlled by `modal.custom`, but you only need to provide the `AlertModalOptions`.
+- The modal uses `DialogContent`, `DialogHeader`, `DialogTitle`, and `DialogClose` components from Shadcn UI. You cannot return arbitrary JSX; it must be compatible with the Shadcn Dialog structure.
+- This pattern allows you to `await` the alert like a standard async function.
+
+### Confirm Modal (modal.confirm)
+
+The `modal.confirm` function allows you to show a confirmation modal with a title, message, and customizable buttons. It internally uses `modal.custom` and returns a `Promise` that resolves with `true` if confirmed or `false` if cancelled.
+
+<ComponentExampleDisplayer componentName={"modal"} exampleName={"variant-confirm"} client:load/>
+
+#### Signature
+
+```tsx
+export type ModalOptions = {
+    hasCloseButton?: boolean;
+    title?: ReactNode;
+    titleIcon?: ReactNode;
+    showTitleIcon?: boolean;
+}
+export type ConfirmModalOptions = {
+    message?: ReactNode | ReactNode[];
+    confirmButtonContent?: ReactNode;
+    cancelButtonContent?: ReactNode;
+} & ModalOptions;
+modal.confirm: (options: ConfirmModalOptions) => Promise<boolean>;
+
+```
+#### Parameters
+
+**`options: ConfirmModalOptions`**
+An object with the following optional properties:
+
+- `title?: string` – The title of the confirmation modal. Defaults to `"Confirm"`.
+- `message: ReactNode` – The main message content of the modal.
+- `cancelButtonContent?: ReactNode` – Custom content for the cancel button. Defaults to an outlined `"Cancel"` button.
+- `confirmButtonContent?: ReactNode` – Custom content for the confirm button. Defaults to a filled `"Confirm"` button.
+- `hasCloseButton?: boolean` – Whether to show a close button at the top-right corner. Defaults to `true`.
+
+#### Returns
+
+**`Promise<boolean>`**
+A promise that resolves with:
+
+- `true` – if the user confirms (clicks the confirm button).
+- `false` – if the user cancels or closes the modal.
+
+#### Notes
+
+- The confirm modal is fully controlled by `modal.custom`, but you only need to provide the `ConfirmModalOptions`.
+- The modal uses `OpalusDialogContent`, `DialogHeader`, `DialogTitle`, and `DialogClose` components from Shadcn UI. You cannot return arbitrary JSX; it must be compatible with the Dialog structure.
+- This pattern allows you to `await` the confirm modal like a standard async function.
+

@@ -19,21 +19,6 @@
       ]
     },
     {
-      "name": "opalus-dialog-content",
-      "type": "registry:ui",
-      "title": "Opalus Dialog Content",
-      "description": "A better DialogContent which can use be set if the default X button is shown",
-      "registryDependencies": [
-        "dialog"
-      ],
-      "files": [
-        {
-          "path": "registry/ui/opalus-dialog-content.tsx",
-          "type": "registry:ui"
-        }
-      ]
-    },
-    {
       "name": "modal",
       "type": "registry:ui",
       "title": "Modal",
@@ -42,7 +27,8 @@
         "@ebay/nice-modal-react"
       ],
       "registryDependencies": [
-        "dialog"
+        "dialog",
+        "opalus-ui/opalus-dialog-content"
       ],
       "files": [
         {

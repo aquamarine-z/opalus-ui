@@ -3,31 +3,30 @@ import {modal} from "../../../../registry/ui/modal.tsx";
 import NiceModal from "@ebay/nice-modal-react";
 import {DialogContent, DialogHeader, DialogTitle} from "@/components/ui/dialog.tsx";
 import React from "react";
-import {Input} from "@/components/ui/input.tsx";
 
 
 export default () => {
-    const [modalResult, setModalResult] = React.useState<string | null>(null);
-
     const openModal = async () => {
-        const value = await modal.custom<string>((close) => {
-            const [result, setResult] = React.useState<string>("");
+        await modal.custom<null>((close) => {
             return <DialogContent>
                 <DialogHeader>
                     <DialogTitle>Dialog</DialogTitle>
                 </DialogHeader>
-                <div className={"py-4"}>This is a custom modal dialog content.</div>
-                <Input value={result} onChange={e => setResult(e.target.value)}/>
-                <Button onClick={() => close(result)}>Submit</Button>
+                <div className={"flex flex-col gap-3"}>
+                    <div>This is a custom modal dialog content.</div>
+                    <div>You can design your own structure of dialog content.</div>
+                    <div>Remember, the return component of the argument function must be a Shadcn
+                        DialogContent or others adapted from it
+                    </div>
+                </div>
+
+                <Button onClick={() => close()}>Close</Button>
             </DialogContent>
         })
-        setModalResult(value || null);
     }
     return <NiceModal.Provider>
         <div className={"flex flex-col items-center gap-2"}>
             <Button variant={"outline"} onClick={openModal}>Open Modal</Button>
-            <div>Modal text result:{modalResult}</div>
         </div>
-
     </NiceModal.Provider>
 }
