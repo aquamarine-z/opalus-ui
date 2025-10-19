@@ -4,7 +4,7 @@ import React from "react";
 
 export default () => {
     const [time, setTime] = React.useState(0);
-    return <div>
+    return <div className={"w-full flex flex-col items-center gap-2"}>
         <TimePickerContainer onTimeChange={(v) => setTime(v)}>
             <TimePicker
                 className={"w-full"}
@@ -55,6 +55,7 @@ export default () => {
                 value={0}
             />
         </TimePickerContainer>
+        <p>Total time in millisecond: {time} ms</p>
     </div>
 
 

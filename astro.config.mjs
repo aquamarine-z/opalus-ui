@@ -6,6 +6,7 @@ import react from '@astrojs/react';
 import tailwindcss from "@tailwindcss/vite";
 import mdx from '@astrojs/mdx';
 import remarkCaptureComponent from './plugins/remark-capture-component.js';
+import expressiveCode from 'astro-expressive-code';
 // https://astro.build/config
 export default defineConfig({
     integrations: [starlight({
@@ -24,11 +25,9 @@ export default defineConfig({
             dark: {flavor: "macchiato", accent: "sky"},
             light: {flavor: "latte", accent: "sky"}
         })],
-    }),
-        react(),
-        mdx({
-            remarkPlugins: [remarkCaptureComponent],
-        }),],
+    }), react(),mdx({
+        remarkPlugins: [remarkCaptureComponent],
+    }),],
     vite: {
         plugins: [tailwindcss()]
     },

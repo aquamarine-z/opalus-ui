@@ -3,16 +3,15 @@ title: Time Picker
 description: Some components allow users to choose a period of time.
 ---
 
-import {ComponentDisplayer} from "../../../components/component-displayer.js";
-import Usage from "../../../components/examples/time-picker/usage.js";
+
+
+
+import {ComponentExampleDisplayer} from "../../../components/example-displayer/component-example-displayer.tsx"
+import {InstallationGuide} from "../../../components/installation-guide.js";
 
 ## Description:
 > Some components allow users to choose a period of time.
-<ComponentDisplayer client:load>
-    <Usage client:load/>
-</ComponentDisplayer>
+<ComponentExampleDisplayer componentName={"time-picker"} exampleName="usage" client:load/>
 
 ## Installation
-```bash
-pnpm dlx shadcn@latest add @opalus-ui/time-picker
-```
+<InstallationGuide componentName="time-picker" client:load/>

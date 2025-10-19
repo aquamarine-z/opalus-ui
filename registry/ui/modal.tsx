@@ -1,6 +1,5 @@
 "use client";
-
-import {ReactNode} from "react";
+import type {ReactNode} from "react";
 import NiceModal, {useModal} from "@ebay/nice-modal-react";
 import {Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle,} from "@/components/ui/dialog";
 import {Button} from "@/components/ui/button";

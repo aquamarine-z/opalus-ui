@@ -5,7 +5,6 @@ export function ThemeSync() {
     useEffect(() => {
         const html = document.documentElement;
 
-        //console.log(111)
         function syncTheme() {
             const theme = html.getAttribute("data-theme");
             if (theme === "dark") {
