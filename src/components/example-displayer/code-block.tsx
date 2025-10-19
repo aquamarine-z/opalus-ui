@@ -18,15 +18,34 @@ export default function CodeBlock({code}: { code: string }) {
     useEffect(() => {
         const html = document.documentElement;
 
-        function updateTheme() {
+        async function updateTheme() {
             const currentTheme = html.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
             setTheme(currentTheme);
-
+            let nowStyle = style
             if (currentTheme === 'dark') {
-                import('react-syntax-highlighter/dist/esm/styles/prism').then(mod => setStyle(mod.oneDark));
+                nowStyle = await import('react-syntax-highlighter/dist/esm/styles/prism').then(mod => mod.oneDark)
             } else {
-                import('react-syntax-highlighter/dist/esm/styles/prism').then(mod => setStyle(mod.ghcolors));
+                nowStyle = await import('react-syntax-highlighter/dist/esm/styles/prism').then(mod => mod.ghcolors);
             }
+            let bgColor=""
+            if (currentTheme === 'dark') {
+                bgColor="#1e2030"
+            }else{
+                bgColor="#e4e7ed"
+            }
+            nowStyle = {
+                ...nowStyle,
+                'pre[class*="language-"]': {
+                    ...nowStyle['pre[class*="language-"]'],
+                    background: bgColor, // 红色
+                },
+                'code[class*="language-"]': {
+                    ...nowStyle['code[class*="language-"]'],
+                    background: bgColor,
+                },
+            };
+
+            setStyle(nowStyle)
         }
 
         // 初始同步
@@ -49,7 +68,7 @@ export default function CodeBlock({code}: { code: string }) {
     if (!SyntaxHighlighter || !style) return <p>Loading...</p>;
 
     return (
-        <div className="relative w-full h-96 group">
+        <div className="relative w-full h-96 group" style={{background:style['pre[class*="language-"]'].background}}>
             {/* 复制按钮 */}
             <button
                 onClick={handleCopy}
@@ -72,6 +91,7 @@ export default function CodeBlock({code}: { code: string }) {
                 style={style}
                 wrapLines
                 showLineNumbers
+
             >
                 {code}
             </SyntaxHighlighter>

@@ -21,13 +21,13 @@ export function InstallationGuide({componentName}: { componentName: string }) {
             <div className="w-full rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
                 {/* 标题 */}
                 <div
-                    className="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 px-4 py-1 font-mono text-sm">
+                    className="bg-[#e4e7ed] dark:bg-[#1e2030] text-gray-700 dark:text-gray-200 px-4 py-1 font-mono text-sm">
                     bash
                 </div>
 
                 {/* 代码区 */}
                 <div
-                    className="flex justify-between gap-2  !mt-0 items-center bg-gray-100 dark:bg-gray-800 px-4 py-2 transition-all">
+                    className="flex justify-between gap-2  !mt-0 items-center bg-[#e4e7ed] dark:bg-[#1e2030] px-4 py-2 transition-all">
                     <code className="font-mono !bg-transparent text-md text-gray-800 dark:text-gray-100 break-all">
                         {code}
                     </code>

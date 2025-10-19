@@ -42,7 +42,7 @@ function PreviewWrapper({children}: { children: React.ReactNode }) {
     return (
         <div
             className={`
-        w-full h-96 flex flex-row items-center justify-center border rounded-md p-8 gap-4
+        w-full h-96 flex flex-row items-center bg-[#e4e7ed] dark:bg-[#1e2030] justify-center border rounded-md p-8 gap-4
       `}
         >
             {children}

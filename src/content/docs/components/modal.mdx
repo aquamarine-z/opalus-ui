@@ -13,6 +13,17 @@ import {InstallationGuide} from "../../../components/installation-guide.js";
 ## Installation
 
 <InstallationGuide componentName="modal" client:load/>
+Use 'NiceModal.Provider' component at the layout of your application
+```tsx layout.tsx
+export default function AppLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <NiceModal.Provider>
+      {children}
+    </NiceModal.Provider>
+  );
+}
+```
+
 
 ## Variants
 
