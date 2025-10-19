@@ -9,7 +9,6 @@
   ],
   "registryDependencies": [
     "dialog",
-    "opalus-ui/opalus-dialog-content",
     "input",
     "button"
   ],
