@@ -7,17 +7,16 @@ import {AlertCircle} from "lucide-react";
 import {Input} from "@/components/ui/input.tsx";
 
 type CustomModalProps = {
-    content: (close: (result?: any) => void) => ReactNode;
+    content: (close: (result?: any) => Promise<void>) => ReactNode;
     resolve?: (value: any) => void;
 };
 
 const CustomModal = NiceModal.create(({content, resolve}: CustomModalProps) => {
     const modal = useModal();
-    const handleClose = (result?: any) => {
+    const handleClose = async (result?: any) => {
         modal.hide();
         modal.remove();
         resolve?.(result);
-
     };
     return (
         <Dialog open={modal.visible} onOpenChange={(v) => !v && handleClose()}>
@@ -50,25 +49,26 @@ export type PromptModalOptions = {
 
 export const modal = {
     custom: <T = any>(
-        content: (close: (result?: T) => void) => ReactNode
+        content: (close: (result?: T) => Promise<void>) => ReactNode
     ): Promise<T | undefined> => {
         return new Promise((resolve) => {
-            NiceModal.show(CustomModal, {content, resolve});
+            NiceModal.show(CustomModal, {content, resolve}).then(r => {
+            });
         });
     },
     alert: (options: AlertModalOptions) => {
         return modal.custom<null>((close) => {
-            return <DialogContent showCloseButton={options.hasCloseButton || true}>
+            return <DialogContent showCloseButton={options.hasCloseButton ?? true}>
                 <DialogHeader>
                     <DialogTitle className={"flex flex-row items-center gap-2"}>
-                        {(options.showTitleIcon || true) && (options.titleIcon || <AlertCircle className={"h-5 w-5"}/>)}
+                        {(options.showTitleIcon ?? true) && (options.titleIcon || <AlertCircle className={"h-5 w-5"}/>)}
                         {options.title || "Alert"}
                     </DialogTitle>
                 </DialogHeader>
                 <div className={"flex flex-col gap-3 items-center"}>
                     <div>{options.message}</div>
                     <DialogClose asChild>
-                        {options.closeButtonContent || <Button variant={"outline"}>Close</Button>}
+                        {options.closeButtonContent || <Button variant={"default"}>Close</Button>}
                     </DialogClose>
                 </div>
             </DialogContent>
@@ -76,10 +76,10 @@ export const modal = {
     },
     confirm: (options: ConfirmModalOptions) => {
         return modal.custom<boolean>((close) => {
-            return <DialogContent showCloseButton={options.hasCloseButton || true}>
+            return <DialogContent showCloseButton={options.hasCloseButton ?? true}>
                 <DialogHeader>
                     <DialogTitle className={"flex flex-row items-center gap-2"}>
-                        {(options.showTitleIcon || true) && (options.titleIcon || <AlertCircle className={"h-5 w-5"}/>)}
+                        {(options.showTitleIcon ?? true) && (options.titleIcon || <AlertCircle className={"h-5 w-5"}/>)}
                         {options.title || "Confirm"}
                     </DialogTitle>
                 </DialogHeader>
@@ -100,10 +100,10 @@ export const modal = {
     prompt: (options: PromptModalOptions) => {
         return modal.custom<string | null>((close) => {
             const [inputValue, setInputValue] = React.useState<string>(options.defaultValue || "");
-            return <DialogContent showCloseButton={options.hasCloseButton || true}>
+            return <DialogContent showCloseButton={options.hasCloseButton ?? true}>
                 <DialogHeader>
                     <DialogTitle className={"flex flex-row items-center gap-2"}>
-                        {(options.showTitleIcon || true) && (options.titleIcon || <AlertCircle className={"h-5 w-5"}/>)}
+                        {(options.showTitleIcon ?? true) && (options.titleIcon || <AlertCircle className={"h-5 w-5"}/>)}
                         {options.title || "Prompt"}
                     </DialogTitle>
                 </DialogHeader>

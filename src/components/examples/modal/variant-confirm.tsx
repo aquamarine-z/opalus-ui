@@ -14,9 +14,8 @@ export default () => {
         await modal.alert({
             title: "Confirm Result",
             message: `You have selected: ${result}`,
-            hasCloseButton: true
+            hasCloseButton: false
         })
-
         setConfirmResult(result);
     }
     return <NiceModal.Provider>

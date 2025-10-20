@@ -8,7 +8,7 @@ import React from "react";
 export default () => {
     const openModal = async () => {
         await modal.custom<null>((close) => {
-            return <DialogContent>
+            return <DialogContent showCloseButton={false}>
                 <DialogHeader>
                     <DialogTitle>Dialog</DialogTitle>
                 </DialogHeader>

@@ -12,13 +12,16 @@ export default () => {
     const openModal = async () => {
         const value = await modal.custom<string>((close) => {
             const [result, setResult] = React.useState<string>("");
-            return <DialogContent>
+            return <DialogContent showCloseButton={false}>
                 <DialogHeader>
                     <DialogTitle>Dialog</DialogTitle>
                 </DialogHeader>
                 <div className={"py-4"}>This is a custom modal dialog content.</div>
                 <Input value={result} onChange={e => setResult(e.target.value)}/>
-                <Button onClick={() => close(result)}>Submit</Button>
+                <Button onClick={async () => {
+                    await close(result)
+                    await modal.alert({message: "You entered: " + result});
+                }}>Submit</Button>
             </DialogContent>
         })
         setModalResult(value || null);
