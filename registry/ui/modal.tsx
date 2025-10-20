@@ -1,5 +1,5 @@
 "use client";
-import React, {type ReactNode} from "react";
+import React, {type ReactNode, useEffect} from "react";
 import NiceModal, {useModal} from "@ebay/nice-modal-react";
 import {Dialog, DialogClose, DialogContent, DialogHeader, DialogTitle} from "@/components/ui/dialog";
 import {Button} from "@/components/ui/button.tsx";
@@ -10,20 +10,6 @@ type CustomModalProps = {
     content: (close: (result?: any) => Promise<void>) => ReactNode;
     resolve?: (value: any) => void;
 };
-
-const CustomModal = NiceModal.create(({content, resolve}: CustomModalProps) => {
-    const modal = useModal();
-    const handleClose = async (result?: any) => {
-        modal.hide();
-        modal.remove();
-        resolve?.(result);
-    };
-    return (
-        <Dialog open={modal.visible} onOpenChange={(v) => !v && handleClose()}>
-            {content(handleClose)}
-        </Dialog>
-    );
-});
 export type ModalOptions = {
     hasCloseButton?: boolean;
     title?: ReactNode;
@@ -51,9 +37,32 @@ export const modal = {
     custom: <T = any>(
         content: (close: (result?: T) => Promise<void>) => ReactNode
     ): Promise<T | undefined> => {
-        return new Promise((resolve) => {
-            NiceModal.show(CustomModal, {content, resolve}).then(r => {
-            });
+        const CustomModal = NiceModal.create(({content, resolve}: CustomModalProps) => {
+            const modal = useModal();
+            const handleClose = async (result?: any) => {
+                resolve?.(result);
+                modal.remove();
+            };
+            const handler = (e: Event) => {
+                const target = e.target as HTMLElement;
+                if (target.closest("[data-radix-dialog-close]")) {
+                    e.stopPropagation();
+                }
+            };
+            useEffect(() => {
+                document.addEventListener("click", handler, true);
+                return () => {
+                    document.removeEventListener("click", handler, true);
+                };
+            }, []);
+            return (
+                <Dialog open={modal.visible} onOpenChange={(v) => !v && handleClose()}>
+                    {content(handleClose)}
+                </Dialog>
+            );
+        });
+        return new Promise(async (resolve) => {
+            await NiceModal.show(CustomModal, {content, resolve});
         });
     },
     alert: (options: AlertModalOptions) => {
@@ -118,5 +127,4 @@ export const modal = {
             </DialogContent>
         })
     }
-
 };

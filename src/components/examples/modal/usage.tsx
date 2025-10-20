@@ -4,11 +4,8 @@ import NiceModal from "@ebay/nice-modal-react";
 import {DialogContent, DialogHeader, DialogTitle} from "@/components/ui/dialog.tsx";
 import React from "react";
 import {Input} from "@/components/ui/input.tsx";
-
-
 export default () => {
     const [modalResult, setModalResult] = React.useState<string | null>(null);
-
     const openModal = async () => {
         const value = await modal.custom<string>((close) => {
             const [result, setResult] = React.useState<string>("");
@@ -19,8 +16,18 @@ export default () => {
                 <div className={"py-4"}>This is a custom modal dialog content.</div>
                 <Input value={result} onChange={e => setResult(e.target.value)}/>
                 <Button onClick={async () => {
-                    await close(result)
                     await modal.alert({message: "You entered: " + result});
+                    if (await modal.confirm({message: "Are you sure you want to submit: " + result + "?"})) await close(result);
+                }}>
+                    Open Inner Alert and Submit
+                </Button>
+                <Button onClick={async () => {
+                    await modal.alert({message: "You entered: " + result});
+                }}>
+                    Open Inner Alert
+                </Button>
+                <Button onClick={async () => {
+                    await close(result);
                 }}>Submit</Button>
             </DialogContent>
         })
@@ -31,6 +38,5 @@ export default () => {
             <Button variant={"outline"} onClick={openModal}>Open Modal</Button>
             <div>Modal text result:{modalResult}</div>
         </div>
-
     </NiceModal.Provider>
 }
