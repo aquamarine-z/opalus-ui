@@ -1,5 +1,5 @@
 "use client";
-import React, {type ReactNode, useEffect} from "react";
+import React, {type ReactNode} from "react";
 import NiceModal, {useModal} from "@ebay/nice-modal-react";
 import {Dialog, DialogClose, DialogContent, DialogHeader, DialogTitle} from "@/components/ui/dialog";
 import {Button} from "@/components/ui/button.tsx";
@@ -32,32 +32,44 @@ export type PromptModalOptions = {
     confirmButtonContent?: ReactNode;
     cancelButtonContent?: ReactNode;
 } & ModalOptions;
-
 export const modal = {
     custom: <T = any>(
-        content: (close: (result?: T) => Promise<void>) => ReactNode
+        content: (close: (result?: T) => Promise<void>) => React.ReactNode
     ): Promise<T | undefined> => {
         const CustomModal = NiceModal.create(({content, resolve}: CustomModalProps) => {
             const modal = useModal();
-            const handleClose = async (result?: any) => {
+            const handleClose = async (result?: any, isAuto: boolean = false) => {
                 resolve?.(result);
                 modal.remove();
             };
-            const handler = (e: Event) => {
-                const target = e.target as HTMLElement;
-                if (target.closest("[data-radix-dialog-close]")) {
-                    e.stopPropagation();
+            const wrappedContent = (() => {
+                const node = content(handleClose);
+                if (React.isValidElement(node)) {
+                    return React.cloneElement(node as React.ReactElement<any>, {
+                        onPointerDownCapture: (e: React.PointerEvent) => {
+                            const target = e.target as HTMLElement;
+                            if (target.closest('[data-slot="dialog-overlay"]')) {
+                                return;
+                            }
+                            if ((node as any).props.onPointerDownCapture) {
+                                (node as any).props.onPointerDownCapture(e);
+                            }
+                            e.stopPropagation();
+                        },
+                    });
                 }
-            };
-            useEffect(() => {
-                document.addEventListener("click", handler, true);
-                return () => {
-                    document.removeEventListener("click", handler, true);
-                };
-            }, []);
+                return node;
+            })();
             return (
-                <Dialog open={modal.visible} onOpenChange={(v) => !v && handleClose()}>
-                    {content(handleClose)}
+                <Dialog
+                    open={modal.visible}
+                    onOpenChange={async (v) => {
+                        if (!v) {
+                            await handleClose(undefined, true);
+                        }
+                    }}
+                >
+                    {wrappedContent}
                 </Dialog>
             );
         });
@@ -76,7 +88,7 @@ export const modal = {
                 </DialogHeader>
                 <div className={"flex flex-col gap-3 items-center"}>
                     <div>{options.message}</div>
-                    <DialogClose asChild>
+                    <DialogClose asChild onClick={() => close()}>
                         {options.closeButtonContent || <Button variant={"default"}>Close</Button>}
                     </DialogClose>
                 </div>

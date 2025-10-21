@@ -4,6 +4,7 @@ import NiceModal from "@ebay/nice-modal-react";
 import {DialogContent, DialogHeader, DialogTitle} from "@/components/ui/dialog.tsx";
 import React from "react";
 import {Input} from "@/components/ui/input.tsx";
+
 export default () => {
     const [modalResult, setModalResult] = React.useState<string | null>(null);
     const openModal = async () => {
@@ -22,10 +23,21 @@ export default () => {
                     Open Inner Alert and Submit
                 </Button>
                 <Button onClick={async () => {
-                    await modal.alert({message: "You entered: " + result});
+                    await modal.custom((closeInner) => {
+                        return <DialogContent>
+                            <DialogHeader>
+                                <DialogTitle>Inner Custom Dialog</DialogTitle>
+                            </DialogHeader>
+                            <div className={"py-4"}>This is an inner custom modal dialog content.</div>
+                            <Button onClick={async () => {
+                                await modal.alert({message: "Inner Custom Dialog Alert"});
+                            }}>Open Inner Alert Dialog</Button>
+                        </DialogContent>
+                    })
                 }}>
                     Open Inner Alert
                 </Button>
+
                 <Button onClick={async () => {
                     await close(result);
                 }}>Submit</Button>
