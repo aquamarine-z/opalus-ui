@@ -40,6 +40,7 @@ export const modal = {
             const modal = useModal();
             const handleClose = async (result?: any, isAuto: boolean = false) => {
                 resolve?.(result);
+                await modal.hide();
                 modal.remove();
             };
             const wrappedContent = (() => {
