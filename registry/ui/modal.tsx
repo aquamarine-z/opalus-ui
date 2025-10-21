@@ -41,9 +41,13 @@ export const modal = {
             const handleClose = async (result?: any, isAuto: boolean = false) => {
                 resolve?.(result);
                 modal.hide();
-                setInterval(() => {
-                    modal.remove()
-                },2000);
+            };
+            const handleAnimationEnd = (e: React.AnimationEvent<HTMLDivElement>) => {
+                const target = e.target as HTMLElement;
+                if (target.dataset.state === "closed") {
+                    //console.log("Modal animation ended, now removing modal.");
+                    modal.remove();
+                }
             };
             return (
                 <Dialog
@@ -54,7 +58,9 @@ export const modal = {
                         }
                     }}
                 >
-                    {content(handleClose)}
+                    <DialogContent onAnimationEnd={handleAnimationEnd}>
+                        {content(handleClose)}
+                    </DialogContent>
                 </Dialog>
             );
         });
