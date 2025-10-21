@@ -53,7 +53,6 @@ export const modal = {
                             await handleClose(undefined, true);
                         }
                     }}
-
                 >
                     {content(handleClose)}
                 </Dialog>
