@@ -40,8 +40,10 @@ export const modal = {
             const modal = useModal();
             const handleClose = async (result?: any, isAuto: boolean = false) => {
                 resolve?.(result);
-                await modal.hide();
-                modal.remove();
+                modal.hide();
+                setTimeout(() => {
+                    modal.remove()
+                }, 2000);
             };
             const wrappedContent = (() => {
                 const node = content(handleClose);
