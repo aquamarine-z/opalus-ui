@@ -41,28 +41,10 @@ export const modal = {
             const handleClose = async (result?: any, isAuto: boolean = false) => {
                 resolve?.(result);
                 modal.hide();
-                setTimeout(() => {
+                setInterval(() => {
                     modal.remove()
-                }, 2000);
+                },2000);
             };
-            const wrappedContent = (() => {
-                const node = content(handleClose);
-                if (React.isValidElement(node)) {
-                    return React.cloneElement(node as React.ReactElement<any>, {
-                        onPointerDownCapture: (e: React.PointerEvent) => {
-                            const target = e.target as HTMLElement;
-                            if (target.closest('[data-slot="dialog-overlay"]')) {
-                                return;
-                            }
-                            if ((node as any).props.onPointerDownCapture) {
-                                (node as any).props.onPointerDownCapture(e);
-                            }
-                            e.stopPropagation();
-                        },
-                    });
-                }
-                return node;
-            })();
             return (
                 <Dialog
                     open={modal.visible}
@@ -71,8 +53,9 @@ export const modal = {
                             await handleClose(undefined, true);
                         }
                     }}
+
                 >
-                    {wrappedContent}
+                    {content(handleClose)}
                 </Dialog>
             );
         });
