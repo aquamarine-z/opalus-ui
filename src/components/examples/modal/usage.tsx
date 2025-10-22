@@ -17,28 +17,6 @@ export default () => {
                 <div className={"py-4"}>This is a custom modal dialog content.</div>
                 <Input value={result} onChange={e => setResult(e.target.value)}/>
                 <Button onClick={async () => {
-                    await modal.alert({message: "You entered: " + result});
-                    if (await modal.confirm({message: "Are you sure you want to submit: " + result + "?"})) await close(result);
-                }}>
-                    Open Inner Alert and Submit
-                </Button>
-                <Button onClick={async () => {
-                    await modal.custom((closeInner) => {
-                        return <DialogContent>
-                            <DialogHeader>
-                                <DialogTitle>Inner Custom Dialog</DialogTitle>
-                            </DialogHeader>
-                            <div className={"py-4"}>This is an inner custom modal dialog content.</div>
-                            <Button onClick={async () => {
-                                await modal.alert({message: "Inner Custom Dialog Alert"});
-                            }}>Open Inner Alert Dialog</Button>
-                        </DialogContent>
-                    })
-                }}>
-                    Open Inner Alert
-                </Button>
-
-                <Button onClick={async () => {
                     await close(result);
                 }}>Submit</Button>
             </DialogContent>
