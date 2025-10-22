@@ -2,6 +2,8 @@
 title: Add Opalus UI
 ---
 
+import {InstallationGuide} from "../../../components/installation-guide.js";
+
 To add Opalus UI Library to your Shadcn UI config,you should do the following steps:
 
 ## 1.Init the shadcn config file
@@ -19,9 +21,7 @@ Open the components.json file and add the following code.
 
 ## 3.Install Opalus UI components
 You can now install Opalus UI components using the shadcn CLI. For example, to install the `modal` component, run the following command:
-```bash
-pnpm dlx shadcn@latest add @opalus-ui/modal
-```
+<InstallationGuide componentName="modal" client:load/>
 
 ## 4.For users in China Mainland
 If you are in China Mainland, you may want to use the following registry link instead:
