@@ -1,6 +1,4 @@
 import {Button} from "@/components/ui/button.tsx";
-
-import NiceModal from "@ebay/nice-modal-react";
 import React from "react";
 import {dialog} from "../../../../registry/ui/surface.tsx";
 
@@ -16,10 +14,8 @@ export default () => {
         })
         setModalContent(content || "");
     }
-    return <NiceModal.Provider>
-        <div className={"flex flex-col items-center gap-2"}>
-            <Button variant={"outline"} onClick={openModal}>Open Prompt Modal</Button>
-            <div>The content in the modal input : {modalContent}</div>
-        </div>
-    </NiceModal.Provider>
+    return <div className={"flex flex-col items-center gap-2"}>
+        <Button variant={"outline"} onClick={openModal}>Open Prompt Modal</Button>
+        <div>The content in the modal input : {modalContent}</div>
+    </div>
 }

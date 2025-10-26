@@ -1,6 +1,4 @@
 import {Button} from "@/components/ui/button.tsx";
-
-import NiceModal from "@ebay/nice-modal-react";
 import {dialog} from "../../../../registry/ui/surface.tsx";
 
 export default () => {
@@ -13,10 +11,7 @@ export default () => {
             modal: false,
         })
     }
-    return <NiceModal.Provider>
-        <div>
-            <Button variant={"outline"} onClick={openAlertDialog}>Open Alert Dialog</Button>
-        </div>
-    </NiceModal.Provider>
-
+    return <div>
+        <Button variant={"outline"} onClick={openAlertDialog}>Open Alert Dialog</Button>
+    </div>
 }

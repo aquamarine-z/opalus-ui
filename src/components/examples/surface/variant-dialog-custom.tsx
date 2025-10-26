@@ -1,6 +1,4 @@
 import {Button} from "@/components/ui/button.tsx";
-
-import NiceModal from "@ebay/nice-modal-react";
 import {DialogHeader, DialogTitle} from "@/components/ui/dialog.tsx";
 import React from "react";
 import {dialog, SurfaceDialogContent} from "../../../../registry/ui/surface.tsx";
@@ -20,14 +18,11 @@ export default () => {
                         DialogContent or others adapted from it
                     </div>
                 </div>
-
                 <Button onClick={() => close()}>Close</Button>
             </SurfaceDialogContent>
         })
     }
-    return <NiceModal.Provider>
-        <div className={"flex flex-col items-center gap-2"}>
-            <Button variant={"outline"} onClick={openModal}>Open Modal</Button>
-        </div>
-    </NiceModal.Provider>
+    return <div className={"flex flex-col items-center gap-2"}>
+        <Button variant={"outline"} onClick={openModal}>Open Modal</Button>
+    </div>
 }

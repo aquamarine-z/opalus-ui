@@ -4,7 +4,6 @@ import {DialogContent, DialogHeader, DialogTitle} from "@/components/ui/dialog.t
 import {Button} from "@/components/ui/button.tsx";
 import React from "react";
 import {Input} from "@/components/ui/input.tsx";
-import NiceModal from "@ebay/nice-modal-react";
 import {dialog} from "../../../../registry/ui/surface.tsx";
 
 export default () => {
@@ -46,13 +45,11 @@ export default () => {
                         Close This Level
                     </Button>
                 </div>
-
             </DialogContent>
         })
     }
-    return <NiceModal.Provider>
-        <Button onClick={() => openCascadeModal(0)}>
-            Open Cascade Modals (Level 0)
-        </Button>
-    </NiceModal.Provider>
+    return <Button onClick={() => openCascadeModal(0)}>
+        Open Cascade Modals (Level 0)
+    </Button>
+
 }

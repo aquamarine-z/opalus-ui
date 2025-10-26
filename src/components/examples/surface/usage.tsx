@@ -1,6 +1,5 @@
 import {Button} from "@/components/ui/button.tsx";
 import {dialog, SurfaceDialogContent} from "../../../../registry/ui/surface.tsx";
-import NiceModal from "@ebay/nice-modal-react";
 import {DialogHeader, DialogTitle} from "@/components/ui/dialog.tsx";
 import React from "react";
 import {Input} from "@/components/ui/input.tsx";
@@ -21,14 +20,12 @@ export default () => {
                 }}>Submit</Button>
             </SurfaceDialogContent>
         }, {
-            modal: true,
+            modal: false,
         })
         setDialogResult(value || null);
     }
-    return <NiceModal.Provider>
-        <div className={"flex flex-col items-center gap-2"}>
-            <Button variant={"outline"} onClick={openDialog}>Open Dialog</Button>
-            <div>Dialog text result:{dialogResult}</div>
-        </div>
-    </NiceModal.Provider>
+    return <div className={"flex flex-col items-center gap-2"}>
+        <Button variant={"outline"} onClick={openDialog}>Open Dialog</Button>
+        <div>Dialog text result:{dialogResult}</div>
+    </div>
 }

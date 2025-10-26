@@ -1,6 +1,4 @@
 import {Button} from "@/components/ui/button.tsx";
-
-import NiceModal from "@ebay/nice-modal-react";
 import React from "react";
 import {dialog} from "../../../../registry/ui/surface.tsx";
 
@@ -21,11 +19,9 @@ export default () => {
         })
         setConfirmResult(result);
     }
-    return <NiceModal.Provider>
-        <div className={"flex flex-col items-center gap-2"}>
-            <Button variant={"outline"} onClick={openAlertDialog}>Open Confirm Dialog</Button>
-            <div>Confirm result: {confirmResult !== undefined ? confirmResult.toString() : "undefined"}</div>
-        </div>
-    </NiceModal.Provider>
+    return <div className={"flex flex-col items-center gap-2"}>
+        <Button variant={"outline"} onClick={openAlertDialog}>Open Confirm Dialog</Button>
+        <div>Confirm result: {confirmResult !== undefined ? confirmResult.toString() : "undefined"}</div>
+    </div>
 
 }

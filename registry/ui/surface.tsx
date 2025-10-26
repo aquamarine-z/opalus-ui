@@ -1,5 +1,5 @@
 "use client";
-import React, {type ReactNode} from "react";
+import React, {type ReactNode, useRef} from "react";
 import NiceModal, {useModal} from "@ebay/nice-modal-react";
 import {Button} from "@/components/ui/button.tsx";
 import {AlertCircle, XIcon} from "lucide-react";
@@ -109,13 +109,21 @@ export const dialog = {
              }: CustomSurfaceProps) => {
                 const isModal = options?.modal ?? true;
                 const modalContext = useModal();
+                const resultRef = useRef<T>(undefined);
+                const resolved = useRef<boolean>(false);
                 const handleClose = async (result?: any, isAuto: boolean = false) => {
-                    resolve?.(result);
                     modalContext.hide();
+                    if (!resolved.current) {
+                        resultRef.current = result;
+                        resolved.current = true;
+                    }
                 };
                 const handleAnimationEnd = (e: React.AnimationEvent<HTMLDivElement>) => {
                     const target = e.target as HTMLElement;
                     if (target.dataset.state === "closed") {
+                        let result = resultRef.current;
+                        resolve?.(result);
+                        resolved.current = true
                         modalContext.remove();
                     }
                 };
@@ -140,6 +148,7 @@ export const dialog = {
                         open={modalContext.visible}
                         onOpenChange={async (v) => {
                             if (!v && modalContext.visible) {
+
                                 if (!isModal) return;
                                 await handleClose(undefined, true);
                             }
