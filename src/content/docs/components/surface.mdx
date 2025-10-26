@@ -15,7 +15,8 @@ import {ComponentExampleDisplayer} from "../../../components/example-displayer/c
 import {InstallationGuide} from "../../../components/installation-guide.js";
 
 ## Warning
-This component is in developing stage. The API may change in the future releases.
+- This component is in developing stage. The API may change in the future releases.
+- Make sure to use **Only One** `NiceModal.Provider` in your application. Multiple providers may cause unexpected behaviors.
 ## Description:
 > Functions to open a surface over the current page. Like modal, drawer, etc.
 <ComponentExampleDisplayer componentName={"surface"} exampleName={"usage"} client:load/>
@@ -33,6 +34,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   );
 }
 ```
+
+- Make sure to use **Only One** `NiceModal.Provider` in your application. Multiple providers may cause unexpected behaviors.
 
 ## Dialog Variants
 

@@ -1,14 +1,14 @@
-import NiceModal from "@ebay/nice-modal-react"
 import {Button} from "@/components/ui/button.tsx";
 import React from "react";
-import {modal} from "../../../../registry/ui/modal.tsx";
+
 import {DialogContent, DialogHeader, DialogTitle} from "@/components/ui/dialog.tsx";
 import {TimePicker, TimePickerContainer} from "../../../../registry/ui/time-picker.tsx";
+import {dialog} from "../../../../registry/ui/surface.tsx";
 
 export default () => {
     const [timeMs, setTimeMs] = React.useState<number>(0);
     const openTimePickerModal = async () => {
-        const time = await modal.custom((close) => {
+        const time = await dialog.custom((close) => {
             const [totalTimeMs, setTotalTimeMs] = React.useState<number>(0);
             return <DialogContent showCloseButton={false}>
                 <DialogHeader>
@@ -38,11 +38,9 @@ export default () => {
         }
     }
     return <div className={"flex flex-col items-center gap-4"}>
-        <NiceModal.Provider>
-            <Button onClick={openTimePickerModal}>
-                Open Time Picker Modal
-            </Button>
-            <span>Total time in milliseconds:{timeMs} ms</span>
-        </NiceModal.Provider>
+        <Button onClick={openTimePickerModal}>
+            Open Time Picker Modal
+        </Button>
+        <span>Total time in milliseconds:{timeMs} ms</span>
     </div>
 }
