@@ -106,11 +106,7 @@ export const dialog = {
             ({
                  content,
                  resolve,
-             }: {
-                content: (close: (result?: T) => Promise<void>) => React.ReactNode;
-                resolve: (value?: T) => void;
-                modal?: boolean;
-            }) => {
+             }: CustomSurfaceProps) => {
                 const isModal = options?.modal ?? true;
                 const modalContext = useModal();
                 const handleClose = async (result?: any, isAuto: boolean = false) => {
