@@ -9,12 +9,14 @@ import {Input} from "@/components/ui/input.tsx";
 type CustomModalProps = {
     content: (close: (result?: any) => Promise<void>) => ReactNode;
     resolve?: (value: any) => void;
+    modal?: boolean;
 };
 export type ModalOptions = {
     hasCloseButton?: boolean;
     title?: ReactNode;
     titleIcon?: ReactNode;
     showTitleIcon?: boolean;
+    modal?: boolean;
 }
 export type AlertModalOptions = {
     message?: ReactNode | ReactNode[];
@@ -34,26 +36,30 @@ export type PromptModalOptions = {
 } & ModalOptions;
 export const modal = {
     custom: <T = any>(
-        content: (close: (result?: T) => Promise<void>) => React.ReactNode
+        content: (close: (result?: T) => Promise<void>) => React.ReactNode,
+        modal?: boolean,
     ): Promise<T | undefined> => {
-        const CustomModal = NiceModal.create(({content, resolve}: CustomModalProps) => {
-            const modal = useModal();
+        const CustomModal = NiceModal.create(({content, resolve, modal}: CustomModalProps) => {
+            const isModal = modal ?? true;
+            const modalContext = useModal();
             const handleClose = async (result?: any, isAuto: boolean = false) => {
                 resolve?.(result);
-                modal.hide();
+                modalContext.hide();
             };
             const handleAnimationEnd = (e: React.AnimationEvent<HTMLDivElement>) => {
                 const target = e.target as HTMLElement;
                 if (target.dataset.state === "closed") {
                     //console.log("Modal animation ended, now removing modal.");
-                    modal.remove();
+                    modalContext.remove();
                 }
             };
             return (
                 <Dialog
-                    open={modal.visible}
+                    modal={isModal}
+                    open={modalContext.visible}
                     onOpenChange={async (v) => {
-                        if (!v) {
+                        if (!v && modalContext.visible) {
+                            if (!isModal) return
                             await handleClose(undefined, true);
                         }
                     }}
@@ -65,7 +71,7 @@ export const modal = {
             );
         });
         return new Promise(async (resolve) => {
-            await NiceModal.show(CustomModal, {content, resolve});
+            await NiceModal.show(CustomModal, {content, resolve, modal});
         });
     },
     alert: (options: AlertModalOptions) => {

@@ -1,0 +1,83 @@
+---
+title: Surface
+description: Functions to open a surface over the current page. Like modal, drawer, etc.
+---
+
+
+
+
+import {ComponentExampleDisplayer} from "../../../components/example-displayer/component-example-displayer.js";
+import {InstallationGuide} from "../../../components/installation-guide.js";
+
+## Warning
+This component is in developing stage. The API may change in the future releases.
+## Description:
+> Functions to open a surface over the current page. Like modal, drawer, etc.
+<ComponentExampleDisplayer componentName={"surface"} exampleName={"usage"} client:load/>
+
+## Installation
+
+<InstallationGuide componentName="surface" client:load/>
+Use 'NiceModal.Provider' component at the layout of your application
+```tsx layout.tsx
+export default function AppLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <NiceModal.Provider>
+    {children}
+</NiceModal.Provider>
+  );
+}
+```
+
+## Variants
+
+### Custom Dialog (dialog.custom)
+
+The `dialog.custom` function allows you to create a fully customizable dialog with additional configuration options, such as whether it is dialog and whether clicking the overlay should close it.
+It returns a value when closed, making it ideal for async workflows.
+
+<ComponentExampleDisplayer componentName={"modal"} exampleName={"variant-custom"} client:load/>
+
+#### Signature
+
+```tsx
+dialog.custom: <T = any>(
+  content: (close: (result?: T) => Promise<void>) => React.ReactNode,
+  modal?: boolean,
+  closeOnClickOverlay?: boolean,
+) => Promise<T | undefined>;
+```
+
+#### Parameters
+
+**`content: (close: (result?: T) => Promise<void>) => React.ReactNode`**
+A function that returns the React content of the modal.
+It receives a `close` function that you can call to close the modal.
+You can pass an optional result to `close`, which will resolve the returned promise.
+
+
+**`modal?: boolean`**
+Determines whether the dialog is **modal** (`true`) or **non-modal** (`false`).
+When `true`, the user cannot interact with the background until the modal is closed.
+Defaults to `true`.
+
+
+**`closeOnClickOverlay?: boolean`**
+Controls whether clicking the overlay (the dimmed background) closes the modal.
+If set to `false`, overlay clicks are ignored.
+Defaults to `true`.
+
+#### Returns
+
+**`Promise<T | undefined>`**
+A promise that resolves with the value passed to `close`,
+or `undefined` if the modal was closed automatically or without a value.
+
+#### Notes
+
+- You can use any React hooks (`useState`, `useEffect`, etc.) inside the dialog content.
+- You can return any type `T` (string, object, boolean, etc.) from `close`.
+- The modal behaves like an async function — you can `await` it directly.
+- The modal must return **Opalus UI SurfaceDialogContent`** or a compatible component as its top-level element.
+- Use `modal={false}` for non-blocking dialogs or drawers.
+- Use `closeOnClickOverlay={false}` if you want to prevent accidental closure when clicking outside.
