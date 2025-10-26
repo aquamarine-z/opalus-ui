@@ -1,14 +1,15 @@
 'use client';
-import {modal} from "../../../../registry/ui/modal.tsx";
+
 import {DialogContent, DialogHeader, DialogTitle} from "@/components/ui/dialog.tsx";
 import {Button} from "@/components/ui/button.tsx";
 import React from "react";
 import {Input} from "@/components/ui/input.tsx";
 import NiceModal from "@ebay/nice-modal-react";
+import {dialog} from "../../../../registry/ui/surface.tsx";
 
 export default () => {
     const openCascadeModal = async (level: number = 0) => {
-        return await modal.custom<number>((close) => {
+        return await dialog.custom<number>((close) => {
             const nextLevel = level + 1;
             const [returnValue, setReturnValue] = React.useState<number | undefined>(level);
             return <DialogContent>

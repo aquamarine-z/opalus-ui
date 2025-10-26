@@ -6,11 +6,11 @@ import React from "react";
 import {Input} from "@/components/ui/input.tsx";
 
 export default () => {
-    const [modalResult, setModalResult] = React.useState<string | null>(null);
-    const openModal = async () => {
+    const [dialogResult, setDialogResult] = React.useState<string | null>(null);
+    const openDialog = async () => {
         const value = await dialog.custom<string>((close) => {
             const [result, setResult] = React.useState<string>("");
-            return <SurfaceDialogContent showCloseButton={false}>
+            return <SurfaceDialogContent closeOnClickOverlay={true} showCloseButton={false}>
                 <DialogHeader>
                     <DialogTitle>Dialog</DialogTitle>
                 </DialogHeader>
@@ -20,13 +20,15 @@ export default () => {
                     await close(result);
                 }}>Submit</Button>
             </SurfaceDialogContent>
-        }, false, false)
-        setModalResult(value || null);
+        }, {
+            modal: true,
+        })
+        setDialogResult(value || null);
     }
     return <NiceModal.Provider>
         <div className={"flex flex-col items-center gap-2"}>
-            <Button variant={"outline"} onClick={openModal}>Open Modal</Button>
-            <div>Modal text result:{modalResult}</div>
+            <Button variant={"outline"} onClick={openDialog}>Open Dialog</Button>
+            <div>Dialog text result:{dialogResult}</div>
         </div>
     </NiceModal.Provider>
 }

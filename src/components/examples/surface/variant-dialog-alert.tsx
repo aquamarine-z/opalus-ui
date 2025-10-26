@@ -1,13 +1,16 @@
 import {Button} from "@/components/ui/button.tsx";
-import {modal} from "registry/ui/modal";
+
 import NiceModal from "@ebay/nice-modal-react";
+import {dialog} from "../../../../registry/ui/surface.tsx";
 
 export default () => {
     const openAlertDialog = async () => {
-        await modal.alert({
+        await dialog.alert({
             title: "Alert Dialog",
             message: "This is an alert dialog using the alert variant of the modal function.",
-            hasCloseButton: false
+            hasCloseButton: false,
+            closeOnCloseOverlay: false,
+            modal: false,
         })
     }
     return <NiceModal.Provider>

@@ -1,14 +1,15 @@
 import {Button} from "@/components/ui/button.tsx";
-import {modal} from "../../../../registry/ui/modal.tsx";
+
 import NiceModal from "@ebay/nice-modal-react";
-import {DialogContent, DialogHeader, DialogTitle} from "@/components/ui/dialog.tsx";
+import {DialogHeader, DialogTitle} from "@/components/ui/dialog.tsx";
 import React from "react";
+import {dialog, SurfaceDialogContent} from "../../../../registry/ui/surface.tsx";
 
 
 export default () => {
     const openModal = async () => {
-        await modal.custom<null>((close) => {
-            return <DialogContent showCloseButton={false}>
+        await dialog.custom<null>((close) => {
+            return <SurfaceDialogContent closeOnClickOverlay={true} showCloseButton={false}>
                 <DialogHeader>
                     <DialogTitle>Dialog</DialogTitle>
                 </DialogHeader>
@@ -21,7 +22,7 @@ export default () => {
                 </div>
 
                 <Button onClick={() => close()}>Close</Button>
-            </DialogContent>
+            </SurfaceDialogContent>
         })
     }
     return <NiceModal.Provider>

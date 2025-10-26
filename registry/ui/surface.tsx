@@ -4,9 +4,7 @@ import NiceModal, {useModal} from "@ebay/nice-modal-react";
 import {Button} from "@/components/ui/button.tsx";
 import {AlertCircle, XIcon} from "lucide-react";
 import {Input} from "@/components/ui/input.tsx";
-
 import * as DialogPrimitive from "@radix-ui/react-dialog"
-
 import {cn} from "@/lib/utils"
 import {Dialog, DialogClose, DialogHeader, DialogPortal, DialogTitle} from "@/components/ui/dialog.tsx";
 
@@ -70,9 +68,10 @@ export function SurfaceDialogContent({
 type CustomSurfaceProps = {
     content: (close: (result?: any) => Promise<void>) => ReactNode;
     resolve?: (value: any) => void;
-    modal?: boolean;
-    closeOnCloseOverlay?: boolean;
 };
+export type CustomDialogOptions = {
+    modal?: boolean;
+}
 export type DialogOptions = {
     hasCloseButton?: boolean;
     title?: ReactNode;
@@ -101,22 +100,18 @@ export type PromptDialogOptions = {
 export const dialog = {
     custom: <T = any>(
         content: (close: (result?: T) => Promise<void>) => React.ReactNode,
-        modal?: boolean,
-        closeOnClickOverlay?: boolean,
+        options?: CustomDialogOptions,
     ): Promise<T | undefined> => {
         const CustomModal = NiceModal.create(
             ({
                  content,
                  resolve,
-                 modal,
-                 closeOnClickOverlay,
              }: {
                 content: (close: (result?: T) => Promise<void>) => React.ReactNode;
                 resolve: (value?: T) => void;
                 modal?: boolean;
-                closeOnClickOverlay?: boolean;
             }) => {
-                const isModal = modal ?? true;
+                const isModal = options?.modal ?? true;
                 const modalContext = useModal();
                 const handleClose = async (result?: any, isAuto: boolean = false) => {
                     resolve?.(result);
@@ -138,7 +133,6 @@ export const dialog = {
                                     handleAnimationEnd(e);
                                     (node.props as any)?.onAnimationEnd?.(e);
                                 },
-                                closeOnClickOverlay: closeOnClickOverlay,
                             } as Partial<React.DOMAttributes<HTMLDivElement>>
                         );
                     }
@@ -164,15 +158,14 @@ export const dialog = {
             await NiceModal.show(CustomModal, {
                 content,
                 resolve,
-                modal,
-                closeOnClickOverlay: closeOnClickOverlay ?? true,
             });
         });
     },
     alert: (options: AlertDialogOptions) => {
         return dialog.custom<null>(
             (close,) => {
-                return <SurfaceDialogContent showCloseButton={options.hasCloseButton ?? true}>
+                return <SurfaceDialogContent closeOnClickOverlay={options.closeOnCloseOverlay ?? true}
+                                             showCloseButton={options.hasCloseButton ?? true}>
                     <DialogHeader>
                         <DialogTitle className={"flex flex-row items-center gap-2"}>
                             {(options.showTitleIcon ?? true) && (options.titleIcon ||
@@ -188,13 +181,13 @@ export const dialog = {
                     </div>
                 </SurfaceDialogContent>
             },
-            options.modal,
-            options.closeOnCloseOverlay
+            {modal: options.modal ?? true,}
         )
     },
     confirm: (options: ConfirmDialogOptions) => {
         return dialog.custom<boolean>((close) => {
-                return <SurfaceDialogContent showCloseButton={options.hasCloseButton ?? true}>
+                return <SurfaceDialogContent closeOnClickOverlay={options.closeOnCloseOverlay ?? true}
+                                             showCloseButton={options.hasCloseButton ?? true}>
                     <DialogHeader>
                         <DialogTitle className={"flex flex-row items-center gap-2"}>
                             {(options.showTitleIcon ?? true) && (options.titleIcon || <AlertCircle className={"h-5 w-5"}/>)}
@@ -214,13 +207,14 @@ export const dialog = {
                     </div>
                 </SurfaceDialogContent>
             },
-            options.modal,
-            options.closeOnCloseOverlay)
+            {modal: options.modal ?? true,}
+        )
     },
     prompt: (options: PromptDialogOptions) => {
         return dialog.custom<string | null>((close) => {
                 const [inputValue, setInputValue] = React.useState<string>(options.defaultValue || "");
-                return <SurfaceDialogContent showCloseButton={options.hasCloseButton ?? true}>
+                return <SurfaceDialogContent closeOnClickOverlay={options.closeOnCloseOverlay ?? true}
+                                             showCloseButton={options.hasCloseButton ?? true}>
                     <DialogHeader>
                         <DialogTitle className={"flex flex-row items-center gap-2"}>
                             {(options.showTitleIcon ?? true) && (options.titleIcon || <AlertCircle className={"h-5 w-5"}/>)}
@@ -237,8 +231,7 @@ export const dialog = {
                     </div>
                 </SurfaceDialogContent>
             },
-            options.modal,
-            options.closeOnCloseOverlay
+            {modal: options.modal ?? true,}
         )
     }
 }

@@ -1,13 +1,14 @@
 import {Button} from "@/components/ui/button.tsx";
-import {modal} from "../../../../registry/ui/modal.tsx";
+
 import NiceModal from "@ebay/nice-modal-react";
 import React from "react";
+import {dialog} from "../../../../registry/ui/surface.tsx";
 
 
 export default () => {
     const [modalContent, setModalContent] = React.useState<string>("");
     const openModal = async () => {
-        const content = await modal.prompt({
+        const content = await dialog.prompt({
             title: "Prompt Modal",
             message: "This is a prompt modal dialog. Please enter some text:",
             placeholder: "Enter your text here",

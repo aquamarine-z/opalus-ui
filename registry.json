@@ -19,10 +19,10 @@
       ]
     },
     {
-      "name": "modal",
+      "name": "surface",
       "type": "registry:ui",
-      "title": "Modal",
-      "description": "A group of function for showing modal",
+      "title": "Surface",
+      "description": "Functions to open a surface over the current page. Like modal, drawer, etc.",
       "dependencies": [
         "@ebay/nice-modal-react"
       ],
@@ -33,7 +33,7 @@
       ],
       "files": [
         {
-          "path": "registry/ui/modal.tsx",
+          "path": "registry/ui/surface.tsx",
           "type": "registry:ui"
         }
       ]
