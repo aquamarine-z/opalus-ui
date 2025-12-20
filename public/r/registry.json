@@ -24,7 +24,9 @@
       "title": "Surface",
       "description": "Functions to open a surface over the current page. Like modal, drawer, etc.",
       "dependencies": [
-        "@ebay/nice-modal-react"
+        "@ebay/nice-modal-react",
+        "@radix-ui/react-dialog",
+        "lucide-react"
       ],
       "registryDependencies": [
         "dialog",
