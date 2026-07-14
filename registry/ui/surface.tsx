@@ -14,12 +14,11 @@ import {
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
 
-const EXIT_FALLBACK_MS = 300
-
 type SurfaceDialogContextValue = {
   close: () => Promise<void>
   closing: boolean
   finishClose: () => void
+  open: boolean
 }
 
 const SurfaceDialogContext = React.createContext<SurfaceDialogContextValue | null>(
@@ -37,10 +36,53 @@ function SurfaceDialogContent({
   className,
   children,
   showCloseButton = true,
-  onAnimationEnd,
+  ref,
   ...props
 }: SurfaceDialogContentProps) {
   const context = React.useContext(SurfaceDialogContext)
+  const contentRef = React.useRef<HTMLDivElement>(null)
+
+  const setContentRef = React.useCallback(
+    (element: HTMLDivElement | null) => {
+      contentRef.current = element
+
+      if (typeof ref === "function") {
+        ref(element)
+      } else if (ref) {
+        ref.current = element
+      }
+    },
+    [ref]
+  )
+
+  React.useEffect(() => {
+    if (!context || !context.closing || context.open) return
+
+    let active = true
+    const frame = window.requestAnimationFrame(() => {
+      const animations = (contentRef.current?.getAnimations() ?? []).filter(
+        (animation) =>
+          animation.playState !== "finished" &&
+          animation.effect?.getComputedTiming().iterations !== Infinity
+      )
+
+      if (animations.length === 0) {
+        context.finishClose()
+        return
+      }
+
+      void Promise.allSettled(
+        animations.map((animation) => animation.finished)
+      ).then(() => {
+        if (active) context.finishClose()
+      })
+    })
+
+    return () => {
+      active = false
+      window.cancelAnimationFrame(frame)
+    }
+  }, [context])
 
   if (!context) {
     throw new Error("SurfaceDialogContent must be rendered inside dialog.custom().")
@@ -48,18 +90,9 @@ function SurfaceDialogContent({
 
   return (
     <DialogContent
+      ref={setContentRef}
       showCloseButton={false}
       className={cn("sm:max-w-lg", className)}
-      onAnimationEnd={(event) => {
-        onAnimationEnd?.(event)
-
-        if (
-          context.closing &&
-          event.currentTarget === event.target
-        ) {
-          context.finishClose()
-        }
-      }}
       {...props}
     >
       {children}
@@ -162,13 +195,6 @@ function custom<T = unknown>(
       )
 
       React.useEffect(() => {
-        if (!closing) return
-
-        const timeout = window.setTimeout(finishClose, EXIT_FALLBACK_MS)
-        return () => window.clearTimeout(timeout)
-      }, [closing, finishClose])
-
-      React.useEffect(() => {
         if (!modal.visible || closeOnOverlayClick || !isModal) return
 
         const handleKeyDown = (event: KeyboardEvent) => {
@@ -188,8 +214,9 @@ function custom<T = unknown>(
           close: () => handleClose(),
           closing,
           finishClose,
+          open: modal.visible,
         }),
-        [closing, finishClose, handleClose]
+        [closing, finishClose, handleClose, modal.visible]
       )
 
       return (
