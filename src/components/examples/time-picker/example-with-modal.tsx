@@ -8,7 +8,7 @@ import {dialog} from "../../../../registry/ui/surface.tsx";
 export default () => {
     const [timeMs, setTimeMs] = React.useState<number>(0);
     const openTimePickerModal = async () => {
-        const time = await dialog.custom((close) => {
+        const time = await dialog.custom<number>((close) => {
             const [totalTimeMs, setTotalTimeMs] = React.useState<number>(0);
             return <DialogContent showCloseButton={false}>
                 <DialogHeader>

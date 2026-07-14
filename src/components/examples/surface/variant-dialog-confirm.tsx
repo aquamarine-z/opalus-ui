@@ -8,14 +8,14 @@ export default () => {
         const result = await dialog.confirm({
             title: "Confirm Dialog",
             message: "Are you sure to perform this operation?",
-            hasCloseButton: false,
-            closeOnCloseOverlay: false,
+            showCloseButton: false,
+            closeOnOverlayClick: false,
             modal: false,
         })
         await dialog.alert({
             title: "Confirm Result",
             message: `You have selected: ${result}`,
-            hasCloseButton: false
+            showCloseButton: false
         })
         setConfirmResult(result);
     }

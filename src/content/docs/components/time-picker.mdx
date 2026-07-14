@@ -1,21 +1,35 @@
 ---
 title: Time Picker
-description: Some components allow users to choose a period of time.
+description: Compose one or more sliders into a duration picker.
 ---
-
-
-
 
 import {ComponentExampleDisplayer} from "../../../components/example-displayer/component-example-displayer.tsx"
 import {InstallationGuide} from "../../../components/installation-guide.js";
 
-## Description:
-> Some components allow users to choose a period of time.
-<ComponentExampleDisplayer componentName={"time-picker"} exampleName="usage" client:load/>
+`TimePicker` uses the shadcn Slider installed for the consumer's selected Base UI
+or Radix configuration. Wrap multiple pickers in `TimePickerContainer` to receive
+their combined duration in milliseconds.
+
+<ComponentExampleDisplayer componentName="time-picker" exampleName="usage" client:load/>
 
 ## Installation
+
 <InstallationGuide componentName="time-picker" client:load/>
 
-## Examples
+## API
 
-<ComponentExampleDisplayer componentName={"time-picker"} exampleName="example-with-modal" client:load/>
+| Prop | Type | Default |
+| --- | --- | --- |
+| `timeMilliseconds` | `number` | `1` |
+| `minValue` | `number` | `0` |
+| `maxValue` | `number` | `1000` |
+| `step` | `number` | `1` |
+| `value` | `number` | uncontrolled |
+| `defaultValue` | `number` | `minValue` |
+| `onValueChange` | `(value: number) => void` | `undefined` |
+| `prefixLabel` | `ReactNode \| (value) => ReactNode` | `undefined` |
+| `suffixLabel` | `ReactNode \| (value) => ReactNode` | `undefined` |
+
+## Dialog Example
+
+<ComponentExampleDisplayer componentName="time-picker" exampleName="example-with-modal" client:load/>

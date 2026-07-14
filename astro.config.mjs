@@ -5,10 +5,14 @@ import catppuccin from "@catppuccin/starlight";
 import react from '@astrojs/react';
 import tailwindcss from "@tailwindcss/vite";
 import mdx from '@astrojs/mdx';
+import {unified} from '@astrojs/markdown-remark';
 import remarkCaptureComponent from './plugins/remark-capture-component.js';
-import expressiveCode from 'astro-expressive-code';
 // https://astro.build/config
 export default defineConfig({
+    site: 'https://opalus-ui.miyuzu.top',
+    markdown: {
+        processor: unified({remarkPlugins: [remarkCaptureComponent]}),
+    },
     integrations: [starlight({
         components: {
             // 重写默认的 `SocialIcons` 组件。
@@ -16,18 +20,16 @@ export default defineConfig({
         },
         title: 'Opalus UI',
         customCss: ["./src/styles/global.css"], // 💡 直接写路径
-        social: [{icon: 'github', label: 'GitHub', href: 'https://github.com/withastro/starlight'}],
+        social: [{icon: 'github', label: 'GitHub', href: 'https://github.com/aquamarine-z/opalus-ui'}],
         sidebar: [
-            {label: 'Getting Started', autogenerate: {directory: 'get-started'}},
-            {label: 'Components', autogenerate: {directory: 'components'}},
+            {label: 'Getting Started', items: [{autogenerate: {directory: 'get-started'}}]},
+            {label: 'Components', items: [{autogenerate: {directory: 'components'}}]},
         ],
         plugins: [catppuccin({
             dark: {flavor: "macchiato", accent: "sky"},
             light: {flavor: "latte", accent: "sky"}
         })],
-    }), react(),mdx({
-        remarkPlugins: [remarkCaptureComponent],
-    }),],
+    }), react(), mdx()],
     vite: {
         plugins: [tailwindcss()]
     },

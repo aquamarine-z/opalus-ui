@@ -1,270 +1,115 @@
 ---
 title: Surface
-description: Functions to open a surface over the current page. Like modal, drawer, etc.
+description: Promise-based custom, alert, confirm, and prompt dialogs.
 ---
-
-
-
-
-
-
-
-
 
 import {ComponentExampleDisplayer} from "../../../components/example-displayer/component-example-displayer.js";
 import {InstallationGuide} from "../../../components/installation-guide.js";
 
-## Warning
-- This component is in developing stage. The API may change in the future releases.
-- Make sure to use **Only One** `NiceModal.Provider` in your application. Multiple providers may cause unexpected behaviors.
-## Description:
-> Functions to open a surface over the current page. Like modal, drawer, etc.
-<ComponentExampleDisplayer componentName={"surface"} exampleName={"usage"} client:load/>
+Surface provides promise-based dialogs over the shadcn Dialog installed in the
+consumer project. The same registry item supports Base UI and Radix without a
+different import or install command.
+
+<ComponentExampleDisplayer componentName="surface" exampleName="usage" client:load/>
 
 ## Installation
 
 <InstallationGuide componentName="surface" client:load/>
-Use 'NiceModal.Provider' component at the layout of your application
-```tsx layout.tsx
-export default function AppLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <NiceModal.Provider>
-    {children}
-</NiceModal.Provider>
-  );
+
+Render exactly one `NiceModal.Provider` above every component that opens a
+surface:
+
+```tsx
+import NiceModal from "@ebay/nice-modal-react"
+
+export function App({ children }: { children: React.ReactNode }) {
+  return <NiceModal.Provider>{children}</NiceModal.Provider>
 }
 ```
 
-- Make sure to use **Only One** `NiceModal.Provider` in your application. Multiple providers may cause unexpected behaviors.
-
-## Dialog Variants
-
-### Custom Dialog (dialog.custom)
-
-The `dialog.custom` function allows you to create a fully customizable dialog with flexible configuration options.
-It supports both modal and non-modal modes and returns a value when closed, making it ideal for async workflows.
-
-<ComponentExampleDisplayer componentName={"surface"} exampleName={"variant-dialog-custom"} client:load/>
-
-
-#### Signature
+## Shared Options
 
 ```tsx
-export type CustomDialogOptions = {
-  modal?: boolean;
-};
-dialog.custom: <T = any>(
+type CustomDialogOptions = {
+  modal?: boolean
+  closeOnOverlayClick?: boolean
+}
+
+type DialogOptions = CustomDialogOptions & {
+  showCloseButton?: boolean
+  title?: React.ReactNode
+  titleIcon?: React.ReactNode
+  showTitleIcon?: boolean
+}
+```
+
+`modal` and `closeOnOverlayClick` default to `true`. A non-modal dialog only
+closes through the `close` callback or an Opalus action. When overlay closing is
+disabled, Escape remains available for modal dialogs.
+
+## Custom Dialog
+
+```tsx
+dialog.custom<T>(
   content: (close: (result?: T) => Promise<void>) => React.ReactNode,
-  options?: CustomDialogOptions,
-) => Promise<T | undefined>;
+  options?: CustomDialogOptions
+): Promise<T | undefined>
 ```
 
-#### Parameters
+Return `SurfaceDialogContent` as the root of custom content when using Opalus
+close controls or `closeOnOverlayClick: false`.
 
-**`content: (close: (result?: T) => Promise<void>) => React.ReactNode`**
-A function that returns the React content of the dialog.
-It receives a `close` function that you can call to close the dialog.
-You can pass an optional result to `close`, which will resolve the returned promise.
+<ComponentExampleDisplayer componentName="surface" exampleName="variant-dialog-custom" client:load/>
 
-
-**`options?: CustomDialogOptions`**
-An optional configuration object for customizing the dialog behavior.
-
-| Option  | Type      | Default | Description                                                                                                                                                           |
-|---------|-----------|---------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `modal` | `boolean` | `true`  | Determines whether the dialog is **modal** (`true`) or **non-modal** (`false`). When `true`, the user cannot interact with the background until the dialog is closed. |
-
-#### Returns
-
-**`Promise<T | undefined>`**
-A promise that resolves with the value passed to `close`,
-or `undefined` if the dialog was closed automatically or without a value.
-
-#### Notes
-
-- You can use any React hooks (`useState`, `useEffect`, etc.) inside the dialog content.
-- You can return any type `T` (string, object, boolean, etc.) from `close`.
-- The dialog behaves like an async function — you can `await` it directly.
-- The dialog must return **Opalus UI `SurfaceDialogContent`** or a compatible component as its top-level element.
-- Use `options.modal = false` for non-blocking dialogs
-- When the dialog is in no-modal mode, the prop `SurfaceDialogContent.closeOnClickOverlay` will not work.
-- When the dialog is in non-modal mode, you can only close it via the `close` function or programmatically. Clicking outside will not close it, and the `DialogClose` button will not work.
-- You can use the **Shadcn Dialog Components** for the content of the dialog.
-
-### Alert Dialog (dialog.alert)
-
-The `dialog.alert` function provides a simple way to display an alert-style dialog with a title, message, and a single close button.
-It is built upon `dialog.custom` and offers a simplified API for quick alert use cases.
-
-<ComponentExampleDisplayer componentName={"surface"} exampleName={"variant-dialog-alert"} client:load/>
-
-#### Signature
+## Alert Dialog
 
 ```tsx
-export type DialogOptions = {
-    hasCloseButton?: boolean;
-    title?: ReactNode;
-    titleIcon?: ReactNode;
-    showTitleIcon?: boolean;
-    modal?: boolean;
-    closeOnCloseOverlay?: boolean;
+type AlertDialogOptions = DialogOptions & {
+  message?: React.ReactNode
+  closeButtonContent?: React.ReactNode
 }
-export type AlertDialogOptions = {
-    message?: ReactNode | ReactNode[];
-    closeButtonContent?: ReactNode;
-} & DialogOptions;
-dialog.alert: (options: AlertDialogOptions) => Promise<null>;
+
+dialog.alert(options?: AlertDialogOptions): Promise<null | undefined>
 ```
 
-#### Parameters
+<ComponentExampleDisplayer componentName="surface" exampleName="variant-dialog-alert" client:load/>
 
-**`options: AlertDialogOptions`**
-An object that defines the appearance and behavior of the alert dialog.
-
-| Option                | Type              | Default                                    | Description                                                                                           |
-|-----------------------|-------------------|--------------------------------------------|-------------------------------------------------------------------------------------------------------|
-| `title`               | `React.ReactNode` | `"Alert"`                                  | The title displayed at the top of the dialog.                                                         |
-| `message`             | `React.ReactNode` | `undefined`                                | The main message or content of the alert.                                                             |
-| `titleIcon`           | `React.ReactNode` | `<AlertCircle />`                          | The icon shown next to the title.                                                                     |
-| `showTitleIcon`       | `boolean`         | `true`                                     | Whether to display the title icon.                                                                    |
-| `closeButtonContent`  | `React.ReactNode` | `<Button variant="default">Close</Button>` | Custom content for the close button.                                                                  |
-| `hasCloseButton`      | `boolean`         | `true`                                     | Whether to show the close button.                                                                     |
-| `closeOnCloseOverlay` | `boolean`         | `true`                                     | Whether clicking the overlay (background) closes the dialog. If modal is true false, it will not work |
-| `modal           `    | `boolean`         | `true`                                     | Whether the dialog is modal or non-modal.                                                             |
-#### Returns
-
-**`Promise<null>`**
-A promise that resolves when the user closes the dialog.
-
-#### Notes
-- You can customize the title, icon, message, and close button content.
-- Built internally using `dialog.custom`.
-- When the dialog is in non-modal mode, you can only close it via the `close` function or programmatically. Clicking outside will not close it, and the `DialogClose` button will not work.
-
-### Confirm Dialog (`dialog.confirm`)
-
-The `dialog.confirm` function provides a way to display a confirmation dialog with customizable title, message, and action buttons.
-It is built upon `dialog.custom` and returns a promise that resolves to `true` or `false` depending on the user’s choice.
-
-<ComponentExampleDisplayer componentName={"surface"} exampleName={"variant-dialog-confirm"} client:load/>
-
-#### Signature
+## Confirm Dialog
 
 ```tsx
-export type DialogOptions = {
-    hasCloseButton?: boolean;
-    title?: ReactNode;
-    titleIcon?: ReactNode;
-    showTitleIcon?: boolean;
-    modal?: boolean;
-    closeOnCloseOverlay?: boolean;
+type ConfirmDialogOptions = DialogOptions & {
+  message?: React.ReactNode
+  confirmButtonContent?: React.ReactNode
+  cancelButtonContent?: React.ReactNode
 }
-export type ConfirmDialogOptions = {
-    message?: ReactNode | ReactNode[];
-    confirmButtonContent?: ReactNode;
-    cancelButtonContent?: ReactNode;
-} & DialogOptions;
-dialog.confirm: (options: ConfirmDialogOptions) => Promise<boolean>;
+
+dialog.confirm(options?: ConfirmDialogOptions): Promise<boolean | undefined>
 ```
 
-#### Parameters
+The promise resolves to `true` for Confirm, `false` for Cancel, and `undefined`
+for an automatic close.
 
-**`options: ConfirmDialogOptions`**
-An object that defines the appearance and behavior of the confirmation dialog.
+<ComponentExampleDisplayer componentName="surface" exampleName="variant-dialog-confirm" client:load/>
 
-| Option                 | Type              | Default                                     | Description                                                                                           |
-|------------------------|-------------------|---------------------------------------------|-------------------------------------------------------------------------------------------------------|
-| `title`                | `React.ReactNode` | `"Confirm"`                                 | The title displayed at the top of the dialog.                                                         |
-| `message`              | `React.ReactNode` | `undefined`                                 | The main message or content of the confirmation prompt.                                               |
-| `titleIcon`            | `React.ReactNode` | `<AlertCircle />`                           | The icon shown next to the title.                                                                     |
-| `showTitleIcon`        | `boolean`         | `true`                                      | Whether to display the title icon.                                                                    |
-| `confirmButtonContent` | `React.ReactNode` | `<Button>Confirm</Button>`                  | Custom content for the confirm (positive) button.                                                     |
-| `cancelButtonContent`  | `React.ReactNode` | `<Button variant="outline">Cancel</Button>` | Custom content for the cancel (negative) button.                                                      |
-| `hasCloseButton`       | `boolean`         | `true`                                      | Whether to show the close button.                                                                     |
-| `closeOnCloseOverlay`  | `boolean`         | `true`                                      | Whether clicking the overlay (background) closes the dialog. If modal is true false, it will not work |
-| `modal           `     | `boolean`         | `true`                                      | Whether the dialog is modal or non-modal.                                                             |
-#### Returns
-
-**`Promise<boolean>`**
-A promise that resolves to:
-
-- `true` when the user confirms (e.g., clicks the “Confirm” button).
-- `false` when the user cancels.
-- `undefined` when the user closes the dialog.
-
-#### Notes
-
-- You can fully customize the title, icon, and button contents.
-- The function automatically handles modal or non-modal mode depending on configuration.
-- Built internally using `dialog.custom`.
-- When the dialog is in non-modal mode, you can only close it via the `close` function or programmatically. Clicking outside will not close it, and the `DialogClose` button will not work.
-
-### Prompt Dialog (dialog.prompt)
-
-The `dialog.prompt` function displays a dialog that allows the user to enter text input, similar to the classic JavaScript `prompt()` function.
-It is built upon `dialog.custom` and provides a simple API for collecting user input asynchronously.
-
-<ComponentExampleDisplayer componentName={"surface"} exampleName={"variant-dialog-prompt"} client:load/>
-
-#### Signature
+## Prompt Dialog
 
 ```tsx
-export type DialogOptions = {
-    hasCloseButton?: boolean;
-    title?: ReactNode;
-    titleIcon?: ReactNode;
-    showTitleIcon?: boolean;
-    modal?: boolean;
-    closeOnCloseOverlay?: boolean;
+type PromptDialogOptions = DialogOptions & {
+  message?: React.ReactNode
+  defaultValue?: string
+  placeholder?: string
+  confirmButtonContent?: React.ReactNode
+  cancelButtonContent?: React.ReactNode
 }
 
-export type PromptDialogOptions = {
-    message?: ReactNode | ReactNode[];
-    defaultValue?: string;
-    placeholder?: string;
-    confirmButtonContent?: ReactNode;
-    cancelButtonContent?: ReactNode;
-} & DialogOptions;
-
-dialog.prompt: (options: PromptDialogOptions) => Promise<string | null>;
+dialog.prompt(options?: PromptDialogOptions): Promise<string | null | undefined>
 ```
-#### Parameters
 
-**`options: PromptDialogOptions`**
-An object that defines the appearance and behavior of the prompt dialog.
+The promise resolves to the entered string, `null` for Cancel, or `undefined`
+for an automatic close.
 
-| Option                 | Type              | Default                    | Description                                                                                           |
-|------------------------|-------------------|----------------------------|-------------------------------------------------------------------------------------------------------|
-| `title`                | `React.ReactNode` | `"Prompt"`                 | The title displayed at the top of the dialog.                                                         |
-| `message`              | `React.ReactNode` | `undefined`                | The message or instructions displayed above the input field.                                          |
-| `titleIcon`            | `React.ReactNode` | `<AlertCircle />`          | The icon shown next to the title.                                                                     |
-| `showTitleIcon`        | `boolean`         | `true`                     | Whether to display the title icon.                                                                    |
-| `defaultValue`         | `string`          | `""`                       | The default text value shown in the input field.                                                      |
-| `placeholder`          | `string`          | `undefined`                | Placeholder text displayed inside the input.                                                          |
-| `confirmButtonContent` | `React.ReactNode` | `<Button>Confirm</Button>` | Custom content for the confirm (submit) button.                                                       |
-| `cancelButtonContent`  | `React.ReactNode` | `undefined`                | *(Optional)* Custom content for a cancel button (if implemented).                                     |
-| `hasCloseButton`       | `boolean`         | `true`                     | Whether to show the close button.                                                                     |
-| `closeOnCloseOverlay`  | `boolean`         | `true`                     | Whether clicking the overlay (background) closes the dialog. If modal is true false, it will not work |
-| `modal           `     | `boolean`         | `true`                     | Whether the dialog is modal or non-modal.                                                             |
+<ComponentExampleDisplayer componentName="surface" exampleName="variant-dialog-prompt" client:load/>
 
-#### Returns
+## Cascade Dialogs
 
-**`Promise<string | null>`**
-A promise that resolves to:
-
-- A `string` containing the user's input when they confirm.
-- `null` if the dialog was closed or cancelled.
-
-#### Notes
-
-- Ideal for cases where you need user input before proceeding (e.g., naming items, entering small text values).
-- You can customize title, message, icons, placeholder, and button appearance.
-- The function automatically manages modal and non-modal modes.
-- Built internally using `dialog.custom`.
-- The input field value is managed internally via React state (`useState`).
-- When the dialog is in non-modal mode, you can only close it via the `close` function or programmatically. Clicking outside will not close it, and the `DialogClose` button will not work.
-
-## Examples
-
-### Cascade Modals
-<ComponentExampleDisplayer componentName={"surface"} exampleName={"example-cascade-modals"} client:load/>
+<ComponentExampleDisplayer componentName="surface" exampleName="example-cascade-modals" client:load/>

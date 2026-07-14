@@ -4,32 +4,34 @@ title: Add Opalus UI
 
 import {InstallationGuide} from "../../../components/installation-guide.js";
 
-To add Opalus UI Library to your Shadcn UI config,you should do the following steps:
+Opalus UI uses the shadcn registry format and supports projects configured with
+either Base UI or Radix.
 
-## 1.Init the shadcn config file
+## 1. Initialize shadcn
+
+Choose your preferred component base when creating `components.json`:
+
 ```bash
-pnpm dlx shadcn@latest init
-```
-This will create a `components.json` file in the root of your project.
-## 2.Add Opalus UI to the shadcn config file
-Open the components.json file and add the following code.
-```json
-"registries": {
-    "@opalus-ui": "https://opalus-ui.vercel.app/r/{name}.json"
-  }
+pnpm dlx shadcn@latest init --base base
 ```
 
-## 3.Install Opalus UI components
-You can now install Opalus UI components using the shadcn CLI. For example, to install the `modal` component, run the following command:
-<InstallationGuide componentName="modal" client:load/>
+Use `--base radix` instead if your project uses Radix. Opalus UI resolves the
+matching shadcn dependencies automatically.
 
-## 4.For users in China Mainland
-If you are in China Mainland, you may want to use the following registry link instead:
+## 2. Add the registry
+
+Add the production registry to `components.json`:
+
 ```json
 {
   "registries": {
-    "@opalus-ui": "https://opalus-ui.miyuzu.top/r/{name}"
+    "@opalus-ui": "https://opalus-ui.miyuzu.top/r/{name}.json"
   }
 }
 ```
-However, it is also sometime unreliable when you are in China Mainland.It is recommended to use a VPN for better access to the original registry.
+
+## 3. Install a component
+
+The install command is the same for Base UI and Radix projects:
+
+<InstallationGuide componentName="surface" client:load/>

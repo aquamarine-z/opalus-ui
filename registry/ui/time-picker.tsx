@@ -1,107 +1,148 @@
-'use client'
+"use client"
 
-import React, {
-    createContext, type HTMLAttributes,
-    useContext,
-    useEffect,
-    useState,
-} from "react"
+import * as React from "react"
 
-import { cn } from "@/lib/utils"
 import { Slider } from "@/components/ui/slider"
+import { cn } from "@/lib/utils"
 
-const TimePickerContext = createContext({
-  time: 0,
-  timeReducer: (() => {}) as (value: number) => void,
+type TimePickerContextValue = {
+  setTime: (id: symbol, value?: number) => void
+}
+
+const TimePickerContext = React.createContext<TimePickerContextValue>({
+  setTime: () => undefined,
 })
+
 type TimePickerContainerProps = {
   children?: React.ReactNode
   onTimeChange?: (value: number) => void
 }
-const TimePickerContainer: React.FC<TimePickerContainerProps> = (props) => {
-  const [time, setTime] = useState(0)
+
+function TimePickerContainer({
+  children,
+  onTimeChange,
+}: TimePickerContainerProps) {
+  const [times, setTimes] = React.useState<ReadonlyMap<symbol, number>>(
+    () => new Map()
+  )
+
+  const setTime = React.useCallback((id: symbol, value?: number) => {
+    setTimes((current) => {
+      const next = new Map(current)
+
+      if (value === undefined) {
+        next.delete(id)
+      } else {
+        next.set(id, value)
+      }
+
+      return next
+    })
+  }, [])
+
+  const totalTime = React.useMemo(
+    () => Array.from(times.values()).reduce((total, value) => total + value, 0),
+    [times]
+  )
+
+  React.useEffect(() => {
+    onTimeChange?.(totalTime)
+  }, [onTimeChange, totalTime])
+
+  const contextValue = React.useMemo(() => ({ setTime }), [setTime])
+
   return (
-    <TimePickerContext.Provider
-      value={{
-        time: time,
-        timeReducer: (value) => {
-          setTime((prev) => prev + value)
-        },
-      }}
-    >
-      <TimePickerTrigger {...props} />
+    <TimePickerContext.Provider value={contextValue}>
+      {children}
     </TimePickerContext.Provider>
   )
 }
-const TimePickerTrigger = (props: TimePickerContainerProps) => {
-  const timePickerContext = useContext(TimePickerContext)
-  useEffect(() => {
-    props.onTimeChange?.(timePickerContext.time)
-  }, [props, timePickerContext])
 
-  return <>{props.children}</>
-}
-type TimePickerProps = {
-  timeMilliseconds: number
+type TimePickerProps = Omit<React.ComponentProps<"div">, "onChange"> & {
+  timeMilliseconds?: number
   step?: number
   minValue?: number
-  maxValue: number
+  maxValue?: number
   prefixLabel?: ((value: number) => React.ReactNode) | React.ReactNode
   suffixLabel?: ((value: number) => React.ReactNode) | React.ReactNode
   value?: number
+  defaultValue?: number
   onValueChange?: (value: number) => void
-} & HTMLAttributes<HTMLDivElement>
-const TimePicker = ({
+}
+
+function TimePicker({
   timeMilliseconds = 1,
   step = 1,
   maxValue = 1000,
   minValue = 0,
-  value = 0,
+  value,
+  defaultValue = minValue,
   onValueChange,
   prefixLabel,
   suffixLabel,
+  className,
   ...props
-}: TimePickerProps) => {
-  const timePickerContext = useContext(TimePickerContext)
-  const [timeValue, setTimeValue] = useState(value - minValue)
-  useEffect(() => {
-    setTimeValue(value - minValue)
-  }, [value])
-  useEffect(() => {
-    onValueChange?.(timeValue + minValue)
-    timePickerContext.timeReducer((timeValue + minValue) * timeMilliseconds)
-    return () => {
-      timePickerContext.timeReducer(-(timeValue + minValue) * timeMilliseconds)
-    }
-  }, [timeValue])
+}: TimePickerProps) {
+  const id = React.useRef(Symbol("time-picker"))
+  const { setTime } = React.useContext(TimePickerContext)
+  const [internalValue, setInternalValue] = React.useState(defaultValue)
+  const isControlled = value !== undefined
+  const selectedValue = Math.min(
+    maxValue,
+    Math.max(minValue, isControlled ? value : internalValue)
+  )
+
+  React.useEffect(() => {
+    setTime(id.current, selectedValue * timeMilliseconds)
+
+    return () => setTime(id.current)
+  }, [selectedValue, setTime, timeMilliseconds])
+
+  const handleValueChange = React.useCallback(
+    (nextValues: number | readonly number[]) => {
+      const nextValue =
+        typeof nextValues === "number"
+          ? nextValues
+          : (nextValues[0] ?? minValue)
+
+      if (!isControlled) {
+        setInternalValue(nextValue)
+      }
+
+      onValueChange?.(nextValue)
+    },
+    [isControlled, minValue, onValueChange]
+  )
+
   const prefix =
     typeof prefixLabel === "function"
-      ? prefixLabel(timeValue + minValue)
+      ? prefixLabel(selectedValue)
       : prefixLabel
   const suffix =
     typeof suffixLabel === "function"
-      ? suffixLabel(timeValue + minValue)
+      ? suffixLabel(selectedValue)
       : suffixLabel
+
   return (
     <div
-      {...props}
       className={cn(
         "flex h-fit w-full flex-row items-center justify-around gap-2",
-        props.className
+        className
       )}
+      {...props}
     >
       {prefix}
       <Slider
-        defaultValue={[timeValue]}
-        max={maxValue - minValue}
+        value={[selectedValue]}
+        min={minValue}
+        max={maxValue}
         step={step}
-        className={cn("")}
-        onValueChange={(v) => {
-          setTimeValue(v[0])
-        }}
+        onValueChange={handleValueChange}
       />
       {suffix}
     </div>
   )
 }
+
 export { TimePicker, TimePickerContainer }
+export type { TimePickerContainerProps, TimePickerProps }

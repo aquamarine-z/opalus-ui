@@ -6,7 +6,10 @@ import CodeBlock from '@/components/example-displayer/code-block.tsx';
 // 动态导入示例组件
 const componentModules = import.meta.glob('../examples/**/*.tsx');
 // 以 raw 形式导入源码
-const componentSources = import.meta.glob('../examples/**/*.tsx', {as: 'raw'});
+const componentSources = import.meta.glob('../examples/**/*.tsx', {
+    query: '?raw',
+    import: 'default',
+});
 
 // 提取源码中 export default 的部分
 function extractDefaultExport(code: string): string {
@@ -83,12 +86,8 @@ export function ComponentExampleDisplayer({
     return (
         <Tabs defaultValue="preview" className="w-full h-fit">
             <TabsList>
-                <TabsTrigger value="preview" asChild>
-                    <button className="!mt-0">Preview</button>
-                </TabsTrigger>
-                <TabsTrigger value="code" asChild>
-                    <button className="!mt-0">Code</button>
-                </TabsTrigger>
+                <TabsTrigger value="preview" className="!mt-0">Preview</TabsTrigger>
+                <TabsTrigger value="code" className="!mt-0">Code</TabsTrigger>
             </TabsList>
 
             <TabsContent  value="preview" className="w-full h-fit !mt-0">

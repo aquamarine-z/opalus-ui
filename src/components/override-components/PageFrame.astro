@@ -1,13 +1,12 @@
 ---
 import MobileMenuToggle from 'virtual:starlight/components/MobileMenuToggle';
-import {ThemeSync} from "../../components/theme-sync.tsx"; // 👈 这是你项目里 shadcn 的 provider
-import NiceModal from '@ebay/nice-modal-react';
+import {ModalHost} from "../../components/modal-host.tsx";
+import {ThemeSync} from "../../components/theme-sync.tsx";
 const {hasSidebar} = Astro.locals.starlightRoute;
 ---
 
-<NiceModal.Provider client:load>
-	<div class="page sl-flex">
-		<!-- 用 shadcn 的主题包裹所有内容 -->
+<div class="page sl-flex">
+		<ModalHost client:load/>
 		<ThemeSync client:load/>
 		<header class="header">
 			<slot name="header"/>
@@ -33,8 +32,7 @@ const {hasSidebar} = Astro.locals.starlightRoute;
 
 		</div>
 
-	</div>
-</NiceModal.Provider>
+</div>
 <style>
     @layer starlight.core {
         .page {
@@ -70,6 +68,7 @@ const {hasSidebar} = Astro.locals.starlightRoute;
             width: 100%;
             background-color: var(--sl-color-black);
             overflow-y: auto;
+            scrollbar-gutter: stable;
         }
 
         :global([aria-expanded='true']) ~ .sidebar-pane {

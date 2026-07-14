@@ -1,13 +1,13 @@
 {
   "$schema": "https://ui.shadcn.com/schema/registry.json",
-  "name": "aqua-shadcn-ui",
-  "homepage": "",
+  "name": "opalus-ui",
+  "homepage": "https://opalus-ui.miyuzu.top",
   "items": [
     {
       "name": "time-picker",
       "type": "registry:ui",
       "title": "Time Picker",
-      "description": "Component to let users select a time period",
+      "description": "Compose one or more shadcn sliders into a duration picker.",
       "registryDependencies": [
         "slider"
       ],
@@ -25,7 +25,6 @@
       "description": "Functions to open a surface over the current page. Like modal, drawer, etc.",
       "dependencies": [
         "@ebay/nice-modal-react",
-        "@radix-ui/react-dialog",
         "lucide-react"
       ],
       "registryDependencies": [

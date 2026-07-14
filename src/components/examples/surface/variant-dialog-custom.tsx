@@ -7,7 +7,7 @@ import {dialog, SurfaceDialogContent} from "../../../../registry/ui/surface.tsx"
 export default () => {
     const openModal = async () => {
         await dialog.custom<null>((close) => {
-            return <SurfaceDialogContent closeOnClickOverlay={true} showCloseButton={false}>
+            return <SurfaceDialogContent showCloseButton={false}>
                 <DialogHeader>
                     <DialogTitle>Dialog</DialogTitle>
                 </DialogHeader>
@@ -20,7 +20,7 @@ export default () => {
                 </div>
                 <Button onClick={() => close()}>Close</Button>
             </SurfaceDialogContent>
-        })
+        }, {closeOnOverlayClick: true})
     }
     return <div className={"flex flex-col items-center gap-2"}>
         <Button variant={"outline"} onClick={openModal}>Open Modal</Button>

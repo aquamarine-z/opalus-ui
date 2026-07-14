@@ -9,7 +9,7 @@ export default () => {
     const openDialog = async () => {
         const value = await dialog.custom<string>((close) => {
             const [result, setResult] = React.useState<string>("");
-            return <SurfaceDialogContent closeOnClickOverlay={true} showCloseButton={false}>
+            return <SurfaceDialogContent showCloseButton={false}>
                 <DialogHeader>
                     <DialogTitle>Dialog</DialogTitle>
                 </DialogHeader>
@@ -21,6 +21,7 @@ export default () => {
             </SurfaceDialogContent>
         }, {
             modal: false,
+            closeOnOverlayClick: true,
         })
         setDialogResult(value || null);
     }

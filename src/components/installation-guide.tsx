@@ -4,7 +4,7 @@ import {Tabs, TabsContent, TabsList, TabsTrigger} from "@/components/ui/tabs";
 export function InstallationGuide({componentName}: { componentName: string }) {
     const pnpmCode = `pnpm dlx shadcn@latest add @opalus-ui/${componentName}`;
     const npxCode = `npx shadcn@latest add @opalus-ui/${componentName}`;
-    const yarnCode = `yarn shadcn@latest add @opalus-ui/${componentName}`;
+    const yarnCode = `yarn dlx shadcn@latest add @opalus-ui/${componentName}`;
     const bunCode = `bunx --bun shadcn@latest add @opalus-ui/${componentName}`;
 
     // 私有单行 Code 组件

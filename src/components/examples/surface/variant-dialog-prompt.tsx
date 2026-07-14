@@ -10,7 +10,7 @@ export default () => {
             title: "Prompt Modal",
             message: "This is a prompt modal dialog. Please enter some text:",
             placeholder: "Enter your text here",
-            hasCloseButton: false
+            showCloseButton: false
         })
         setModalContent(content || "");
     }
