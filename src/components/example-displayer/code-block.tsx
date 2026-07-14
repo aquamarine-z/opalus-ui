@@ -1,62 +1,44 @@
 'use client';
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useMemo, useState} from 'react';
+import SyntaxHighlighter from 'react-syntax-highlighter/dist/esm/prism';
+import {ghcolors, oneDark} from 'react-syntax-highlighter/dist/esm/styles/prism';
 
 export default function CodeBlock({code}: { code: string }) {
-    const [SyntaxHighlighter, setSyntaxHighlighter] = useState<any>(null);
-    const [style, setStyle] = useState<any>(null);
     const [copied, setCopied] = useState(false);
     const [theme, setTheme] = useState<'light' | 'dark'>('light');
 
-    // 动态导入 SyntaxHighlighter
-    useEffect(() => {
-        import('react-syntax-highlighter/dist/esm/prism')
-            //@ts-ignore
-            .then(mod => setSyntaxHighlighter(() => mod.Prism || mod.default));
-    }, []);
-
-    // 根据主题动态加载样式
     useEffect(() => {
         const html = document.documentElement;
 
-        async function updateTheme() {
+        function updateTheme() {
             const currentTheme = html.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
             setTheme(currentTheme);
-            let nowStyle = style
-            if (currentTheme === 'dark') {
-                nowStyle = await import('react-syntax-highlighter/dist/esm/styles/prism').then(mod => mod.oneDark)
-            } else {
-                nowStyle = await import('react-syntax-highlighter/dist/esm/styles/prism').then(mod => mod.ghcolors);
-            }
-            let bgColor=""
-            if (currentTheme === 'dark') {
-                bgColor="#1e2030"
-            }else{
-                bgColor="#e4e7ed"
-            }
-            nowStyle = {
-                ...nowStyle,
-                'pre[class*="language-"]': {
-                    ...nowStyle['pre[class*="language-"]'],
-                    background: bgColor, // 红色
-                },
-                'code[class*="language-"]': {
-                    ...nowStyle['code[class*="language-"]'],
-                    background: bgColor,
-                },
-            };
-
-            setStyle(nowStyle)
         }
 
-        // 初始同步
         updateTheme();
 
-        // 监听 theme 变化
         const observer = new MutationObserver(updateTheme);
         observer.observe(html, {attributes: true, attributeFilter: ['data-theme']});
 
         return () => observer.disconnect();
     }, []);
+
+    const backgroundColor = theme === 'dark' ? '#1e2030' : '#e4e7ed';
+    const style = useMemo(() => {
+        const baseStyle = theme === 'dark' ? oneDark : ghcolors;
+
+        return {
+            ...baseStyle,
+            'pre[class*="language-"]': {
+                ...baseStyle['pre[class*="language-"]'],
+                background: backgroundColor,
+            },
+            'code[class*="language-"]': {
+                ...baseStyle['code[class*="language-"]'],
+                background: backgroundColor,
+            },
+        };
+    }, [backgroundColor, theme]);
 
     const handleCopy = () => {
         navigator.clipboard.writeText(code).then(() => {
@@ -65,10 +47,8 @@ export default function CodeBlock({code}: { code: string }) {
         });
     };
 
-    if (!SyntaxHighlighter || !style) return <p>Loading...</p>;
-
     return (
-        <div className="relative w-full h-96 group" style={{background:style['pre[class*="language-"]'].background}}>
+        <div className="relative w-full h-96 group" style={{background: backgroundColor}}>
             {/* 复制按钮 */}
             <button
                 onClick={handleCopy}
