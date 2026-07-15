@@ -9,7 +9,7 @@ import {unified} from '@astrojs/markdown-remark';
 import remarkCaptureComponent from './plugins/remark-capture-component.js';
 // https://astro.build/config
 export default defineConfig({
-    site: 'https://opalus-ui.miyuzu.top',
+    site: 'https://opalus-ui.aquamarinez.com',
     markdown: {
         processor: unified({remarkPlugins: [remarkCaptureComponent]}),
     },

@@ -1,7 +1,7 @@
 {
   "$schema": "https://ui.shadcn.com/schema/registry.json",
   "name": "opalus-ui",
-  "homepage": "https://opalus-ui.miyuzu.top",
+  "homepage": "https://opalus-ui.aquamarinez.com",
   "items": [
     {
       "name": "time-picker",
