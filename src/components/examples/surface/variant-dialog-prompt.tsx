@@ -12,7 +12,7 @@ export default () => {
             placeholder: "Enter your text here",
             showCloseButton: false
         })
-        setModalContent(content || "");
+        setModalContent(content ?? "");
     }
     return <div className={"flex flex-col items-center gap-2"}>
         <Button variant={"outline"} onClick={openModal}>Open Prompt Modal</Button>

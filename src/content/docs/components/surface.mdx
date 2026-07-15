@@ -6,9 +6,14 @@ description: Promise-based custom, alert, confirm, and prompt dialogs.
 import {ComponentExampleDisplayer} from "../../../components/example-displayer/component-example-displayer.js";
 import {InstallationGuide} from "../../../components/installation-guide.js";
 
-Surface provides promise-based dialogs over the shadcn Dialog installed in the
-consumer project. The same registry item supports Base UI and Radix without a
-different import or install command.
+Surface opens promise-based dialogs from event handlers and other imperative
+workflows. It composes the shadcn Dialog, Button, and Input components already
+installed in the consumer project, so the resulting dialogs inherit the
+consumer's shadcn style and theme.
+
+The same registry item supports shadcn projects configured with Base UI or
+Radix. Surface only uses the common shadcn component API and does not import a
+primitive package directly.
 
 <ComponentExampleDisplayer componentName="surface" exampleName="usage" client:load/>
 
@@ -16,7 +21,8 @@ different import or install command.
 
 <InstallationGuide componentName="surface" client:load/>
 
-Render exactly one `NiceModal.Provider` above every component that opens a
+Surface uses `@ebay/nice-modal-react` to register and control dialog instances.
+Render exactly one `NiceModal.Provider` above every component that can open a
 surface:
 
 ```tsx
@@ -27,9 +33,43 @@ export function App({ children }: { children: React.ReactNode }) {
 }
 ```
 
-## Shared Options
+Do not render a separate provider for each route or feature. NiceModal keeps its
+dispatch function and modal registry at module scope, so multiple providers in
+the same JavaScript runtime can overwrite one another. Multiple browser pages or
+tabs are isolated and do not share this state.
+
+## Lifecycle
+
+Every call creates an independent NiceModal instance. Calling an Opalus action,
+the custom `close` callback, the close icon, Escape, or an allowed overlay press
+starts the same close sequence:
+
+1. The first close request stores its result and hides the NiceModal instance.
+2. Repeated close requests reuse the same close promise and cannot change the
+   stored result.
+3. Surface reads the finite Web Animations attached to
+   `SurfaceDialogContent`.
+4. The public promise resolves only after those animations settle.
+5. Surface resolves the NiceModal hide promise and removes the instance.
+
+Surface does not use a fixed `300ms`, `400ms`, or similar close timeout. A dialog
+without a detectable finite animation is removed on the next animation frame.
+Infinite animations are ignored. Do not leave a finite exit animation paused
+indefinitely, because its `animation.finished` promise will remain pending.
+
+For animation-aware custom dialog cleanup, use `SurfaceDialogContent` as the
+rendered shadcn Dialog content. If custom content renders a raw `DialogContent`,
+Surface still cleans up the NiceModal instance, but it cannot wait for an
+unregistered content animation.
+
+## Shared Types
 
 ```tsx
+type SurfaceButtonProps = Omit<
+  React.ComponentProps<typeof Button>,
+  "children" | "onClick" | "type"
+>
+
 type CustomDialogOptions = {
   modal?: boolean
   closeOnOverlayClick?: boolean
@@ -37,15 +77,43 @@ type CustomDialogOptions = {
 
 type DialogOptions = CustomDialogOptions & {
   showCloseButton?: boolean
+  closeButtonLabel?: string
   title?: React.ReactNode
   titleIcon?: React.ReactNode
   showTitleIcon?: boolean
 }
 ```
 
-`modal` and `closeOnOverlayClick` default to `true`. A non-modal dialog only
-closes through the `close` callback or an Opalus action. When overlay closing is
-disabled, Escape remains available for modal dialogs.
+`SurfaceButtonProps` passes normal shadcn Button options such as `variant`,
+`size`, `disabled`, and `className` to an action without allowing the consumer to
+replace the action's internal click handler or button type.
+
+### Shared defaults
+
+| Option | Default | Behavior |
+| --- | --- | --- |
+| `modal` | `true` | Traps focus and uses the modal behavior supplied by shadcn Dialog. |
+| `showCloseButton` | `true` | Shows the Surface close icon in the top-right corner. |
+| `closeButtonLabel` | `"Close"` | Accessible name for the icon-only close button. Override it for localization. |
+| `showTitleIcon` | `true` | Displays `titleIcon` or the default alert-circle icon. |
+| `titleIcon` | alert-circle icon | Accepts any React node and is hidden from the accessibility tree. |
+
+`closeOnOverlayClick` has a variant-specific default:
+
+| Variant | Default | Escape |
+| --- | --- | --- |
+| `custom` | `true` | Closes the active modal dialog. |
+| `alert` | `false` | Closes the active modal dialog. |
+| `confirm` | `false` | Closes the active modal dialog and returns `false`. |
+| `prompt` | `true` | Closes the active modal dialog and returns `null`. |
+
+When `modal` is `false`, automatic overlay and Escape closing are disabled. The
+surface closes only through the provided `close` callback or an Opalus action.
+
+When overlay closing is disabled for a modal dialog, Surface listens for Escape
+on that dialog's own `ownerDocument`. It only handles the event when the event
+target is inside the current `SurfaceDialogContent`, so nested dialogs and
+separate React roots do not share a global Surface stack.
 
 ## Custom Dialog
 
@@ -56,8 +124,57 @@ dialog.custom<T>(
 ): Promise<T | undefined>
 ```
 
-Return `SurfaceDialogContent` as the root of custom content when using Opalus
-close controls or `closeOnOverlayClick: false`.
+Use `SurfaceDialogContent` as the custom content adapter. It is the only custom
+layout component exported by Surface. Compose the rest of the dialog with the
+consumer's existing shadcn components:
+
+```tsx
+function EditProjectDialog({
+  close,
+}: {
+  close: (result?: string) => Promise<void>
+}) {
+  const [name, setName] = React.useState("")
+
+  return (
+    <SurfaceDialogContent showCloseButton={false}>
+      <DialogHeader>
+        <DialogTitle>Edit project</DialogTitle>
+        <DialogDescription>
+          Enter the name shown across this workspace.
+        </DialogDescription>
+      </DialogHeader>
+
+      <Input
+        aria-label="Project name"
+        value={name}
+        onChange={(event) => setName(event.target.value)}
+      />
+
+      <Button onClick={() => void close(name)}>Save</Button>
+    </SurfaceDialogContent>
+  )
+}
+
+const name = await dialog.custom<string>((close) => (
+  <EditProjectDialog close={close} />
+))
+```
+
+The callback passed to `dialog.custom` is a render callback, not a React
+component. Do not call Hooks directly inside it. Render a normal React component
+from the callback when custom content needs state, effects, refs, or other
+Hooks.
+
+`close(result)` is idempotent and returns a promise that completes after the
+exit animation. The `dialog.custom` result is:
+
+| Close path | Result |
+| --- | --- |
+| `close(value)` | The supplied `value`. |
+| `close()` | `undefined`. |
+| Close icon | `undefined`. |
+| Escape or allowed overlay press | `undefined`. |
 
 <ComponentExampleDisplayer componentName="surface" exampleName="variant-dialog-custom" client:load/>
 
@@ -67,9 +184,27 @@ close controls or `closeOnOverlayClick: false`.
 type AlertDialogOptions = DialogOptions & {
   message?: React.ReactNode
   closeButtonContent?: React.ReactNode
+  closeButtonProps?: SurfaceButtonProps
 }
 
-dialog.alert(options?: AlertDialogOptions): Promise<null | undefined>
+dialog.alert(options?: AlertDialogOptions): Promise<void>
+```
+
+Alert uses the current shadcn Dialog visual structure with `role="alertdialog"`
+and connects `message` through `DialogDescription`. Overlay closing defaults to
+`false`, so the user must acknowledge the alert, use the close icon, or press
+Escape unless the option is explicitly changed.
+
+The returned promise has no value and resolves after the alert exit animation
+finishes.
+
+```tsx
+await dialog.alert({
+  title: "Changes saved",
+  message: "The project settings are now up to date.",
+  closeButtonContent: "Done",
+  closeButtonProps: { variant: "secondary" },
+})
 ```
 
 <ComponentExampleDisplayer componentName="surface" exampleName="variant-dialog-alert" client:load/>
@@ -80,14 +215,35 @@ dialog.alert(options?: AlertDialogOptions): Promise<null | undefined>
 type ConfirmDialogOptions = DialogOptions & {
   message?: React.ReactNode
   confirmButtonContent?: React.ReactNode
+  confirmButtonProps?: SurfaceButtonProps
   cancelButtonContent?: React.ReactNode
+  cancelButtonProps?: SurfaceButtonProps
 }
 
-dialog.confirm(options?: ConfirmDialogOptions): Promise<boolean | undefined>
+dialog.confirm(options?: ConfirmDialogOptions): Promise<boolean>
 ```
 
-The promise resolves to `true` for Confirm, `false` for Cancel, and `undefined`
-for an automatic close.
+Confirm uses `role="alertdialog"`, exposes separate shadcn Button props for both
+actions, and defaults to disabling overlay dismissal. Use
+`confirmButtonProps.variant` for destructive actions without replacing the
+button implementation:
+
+```tsx
+const confirmed = await dialog.confirm({
+  title: "Delete project?",
+  message: "This action cannot be undone.",
+  cancelButtonContent: "Keep project",
+  confirmButtonContent: "Delete project",
+  confirmButtonProps: { variant: "destructive" },
+})
+```
+
+| Close path | Result |
+| --- | --- |
+| Confirm action | `true` |
+| Cancel action | `false` |
+| Close icon | `false` |
+| Escape or allowed overlay press | `false` |
 
 <ComponentExampleDisplayer componentName="surface" exampleName="variant-dialog-confirm" client:load/>
 
@@ -96,20 +252,95 @@ for an automatic close.
 ```tsx
 type PromptDialogOptions = DialogOptions & {
   message?: React.ReactNode
+  inputLabel?: string
   defaultValue?: string
   placeholder?: string
+  inputProps?: Omit<
+    React.ComponentProps<typeof Input>,
+    "defaultValue" | "name" | "value"
+  >
   confirmButtonContent?: React.ReactNode
+  confirmButtonProps?: SurfaceButtonProps
   cancelButtonContent?: React.ReactNode
+  cancelButtonProps?: SurfaceButtonProps
 }
 
-dialog.prompt(options?: PromptDialogOptions): Promise<string | null | undefined>
+dialog.prompt(options?: PromptDialogOptions): Promise<string | null>
 ```
 
-The promise resolves to the entered string, `null` for Cancel, or `undefined`
-for an automatic close.
+Prompt renders the existing shadcn Input as an uncontrolled form field. It does
+not call Hooks inside the custom render callback. Pressing Enter submits the
+current value; IME composition Enter events are ignored until composition
+finishes.
+
+`inputLabel` supplies the Input accessible name and defaults to `"Input"`.
+`inputProps` passes normal Input props such as `required`, `maxLength`,
+`autoComplete`, `disabled`, `className`, and input event handlers. Surface owns
+the field name, value mode, and default value so it can return the submitted
+string reliably.
+
+```tsx
+const projectName = await dialog.prompt({
+  title: "Rename project",
+  message: "Choose a short name for this project.",
+  inputLabel: "Project name",
+  defaultValue: "Opalus UI",
+  placeholder: "Enter a project name",
+  inputProps: {
+    autoComplete: "off",
+    maxLength: 64,
+  },
+  confirmButtonContent: "Rename",
+})
+```
+
+| Close path | Result |
+| --- | --- |
+| Confirm action or Enter | Current input string, including an empty string. |
+| Cancel action | `null` |
+| Close icon | `null` |
+| Escape or allowed overlay press | `null` |
 
 <ComponentExampleDisplayer componentName="surface" exampleName="variant-dialog-prompt" client:load/>
 
+## Accessibility and Keyboard Behavior
+
+- Alert and Confirm expose `role="alertdialog"`; Custom and Prompt use the
+  shadcn Dialog role.
+- Titles use `DialogTitle`, and messages use `DialogDescription`, providing the
+  accessible name and description relationships supplied by shadcn.
+- The close icon is an icon-only shadcn Button with a configurable
+  `aria-label`.
+- Prompt always provides an accessible Input name through `inputLabel`.
+- Prompt submits with Enter while preserving IME composition behavior.
+- Escape affects only the focused Surface content when Surface must handle the
+  key itself.
+- Focus trapping, focus restoration, pointer dismissal, and overlay behavior
+  remain owned by the installed shadcn Dialog primitive.
+
 ## Cascade Dialogs
 
+Each `dialog.custom` call creates a unique NiceModal component type and ID. This
+allows a Surface to open another Surface without replacing the parent instance.
+The parent promise remains pending until its own close sequence finishes.
+
+Stateful cascade content must follow the same Hooks rule as any custom dialog:
+put Hooks in a rendered React component, not directly in the `dialog.custom`
+callback.
+
 <ComponentExampleDisplayer componentName="surface" exampleName="example-cascade-modals" client:load/>
+
+## Provider and Root Constraints
+
+- Use one `NiceModal.Provider` for one JavaScript runtime.
+- Routes rendered below that provider can all call Surface.
+- Browser tabs and separate pages do not share Provider or Surface state.
+- Multiple React roots that share one copy of NiceModal must not mount separate
+  NiceModal providers; NiceModal itself uses module-level dispatch and registry
+  state.
+- A micro-frontend that requires an independent provider must isolate its
+  NiceModal runtime or use a provider-scoped modal manager instead.
+
+Surface does not maintain a module-level dialog stack. Its animation and Escape
+coordination are scoped to each instance and its rendered
+`SurfaceDialogContent`.

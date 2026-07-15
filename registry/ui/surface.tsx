@@ -8,55 +8,68 @@ import { Button } from "@/components/ui/button"
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
 
+type ContentElement = HTMLDivElement | null
+
 type SurfaceDialogContextValue = {
   close: () => Promise<void>
-  closing: boolean
-  finishClose: () => void
-  open: boolean
+  setContentElement: (element: ContentElement) => void
 }
 
 const SurfaceDialogContext = React.createContext<SurfaceDialogContextValue | null>(
   null
 )
 
-type SurfaceDialogContentProps = Omit<
-  React.ComponentProps<typeof DialogContent>,
-  "showCloseButton"
-> & {
-  showCloseButton?: boolean
-}
+function useSurfaceLifecycle<T>(
+  modal: ReturnType<typeof useModal>,
+  resolveResult: (result: T | undefined) => void
+) {
+  const modalRef = React.useRef(modal)
+  const contentRef = React.useRef<ContentElement>(null)
+  const resultRef = React.useRef<T | undefined>(undefined)
+  const closePromiseRef = React.useRef<Promise<void> | null>(null)
+  const removedRef = React.useRef(false)
+  const [closing, setClosing] = React.useState(false)
+  const [contentElement, setContentElementState] =
+    React.useState<ContentElement>(null)
 
-function SurfaceDialogContent({
-  className,
-  children,
-  showCloseButton = true,
-  ref,
-  ...props
-}: SurfaceDialogContentProps) {
-  const context = React.useContext(SurfaceDialogContext)
-  const contentRef = React.useRef<HTMLDivElement>(null)
+  modalRef.current = modal
 
-  const setContentRef = React.useCallback(
-    (element: HTMLDivElement | null) => {
-      contentRef.current = element
+  const setContentElement = React.useCallback((element: ContentElement) => {
+    contentRef.current = element
+    setContentElementState(element)
+  }, [])
 
-      if (typeof ref === "function") {
-        ref(element)
-      } else if (ref) {
-        ref.current = element
-      }
-    },
-    [ref]
-  )
+  const finishClose = React.useCallback(() => {
+    if (removedRef.current) return
+
+    removedRef.current = true
+    const currentModal = modalRef.current
+    resolveResult(resultRef.current)
+    currentModal.resolveHide()
+    currentModal.remove()
+  }, [resolveResult])
+
+  const close = React.useCallback((result?: T): Promise<void> => {
+    if (closePromiseRef.current) return closePromiseRef.current
+
+    resultRef.current = result
+    setClosing(true)
+    closePromiseRef.current = Promise.resolve(modalRef.current.hide()).then(
+      () => undefined
+    )
+
+    return closePromiseRef.current
+  }, [])
 
   React.useEffect(() => {
-    if (!context || !context.closing || context.open) return
+    if (!closing || modal.visible) return
 
     let active = true
     const frame = window.requestAnimationFrame(() => {
@@ -67,14 +80,14 @@ function SurfaceDialogContent({
       )
 
       if (animations.length === 0) {
-        context.finishClose()
+        finishClose()
         return
       }
 
       void Promise.allSettled(
         animations.map((animation) => animation.finished)
       ).then(() => {
-        if (active) context.finishClose()
+        if (active) finishClose()
       })
     })
 
@@ -82,7 +95,41 @@ function SurfaceDialogContent({
       active = false
       window.cancelAnimationFrame(frame)
     }
-  }, [context])
+  }, [closing, finishClose, modal.visible])
+
+  return { close, contentElement, setContentElement }
+}
+
+type SurfaceDialogContentProps = Omit<
+  React.ComponentProps<typeof DialogContent>,
+  "showCloseButton"
+> & {
+  closeButtonLabel?: string
+  showCloseButton?: boolean
+}
+
+function SurfaceDialogContent({
+  className,
+  children,
+  closeButtonLabel = "Close",
+  showCloseButton = true,
+  ref,
+  ...props
+}: SurfaceDialogContentProps) {
+  const context = React.useContext(SurfaceDialogContext)
+
+  const setContentRef = React.useCallback(
+    (element: ContentElement) => {
+      context?.setContentElement(element)
+
+      if (typeof ref === "function") {
+        ref(element)
+      } else if (ref) {
+        ref.current = element
+      }
+    },
+    [context, ref]
+  )
 
   if (!context) {
     throw new Error("SurfaceDialogContent must be rendered inside dialog.custom().")
@@ -102,16 +149,20 @@ function SurfaceDialogContent({
           variant="ghost"
           size="icon-sm"
           className="absolute top-2 right-2"
-          aria-label="Close"
+          aria-label={closeButtonLabel}
           onClick={() => void context.close()}
         >
-          <XIcon />
-          <span className="sr-only">Close</span>
+          <XIcon aria-hidden="true" />
         </Button>
       )}
     </DialogContent>
   )
 }
+
+type SurfaceButtonProps = Omit<
+  React.ComponentProps<typeof Button>,
+  "children" | "onClick" | "type"
+>
 
 type CustomDialogOptions = {
   modal?: boolean
@@ -120,6 +171,7 @@ type CustomDialogOptions = {
 
 type DialogOptions = CustomDialogOptions & {
   showCloseButton?: boolean
+  closeButtonLabel?: string
   title?: React.ReactNode
   titleIcon?: React.ReactNode
   showTitleIcon?: boolean
@@ -128,95 +180,85 @@ type DialogOptions = CustomDialogOptions & {
 type AlertDialogOptions = DialogOptions & {
   message?: React.ReactNode
   closeButtonContent?: React.ReactNode
+  closeButtonProps?: SurfaceButtonProps
 }
 
 type ConfirmDialogOptions = DialogOptions & {
   message?: React.ReactNode
   confirmButtonContent?: React.ReactNode
+  confirmButtonProps?: SurfaceButtonProps
   cancelButtonContent?: React.ReactNode
+  cancelButtonProps?: SurfaceButtonProps
 }
 
 type PromptDialogOptions = DialogOptions & {
   message?: React.ReactNode
+  inputLabel?: string
   defaultValue?: string
   placeholder?: string
+  inputProps?: Omit<
+    React.ComponentProps<typeof Input>,
+    "defaultValue" | "name" | "value"
+  >
   confirmButtonContent?: React.ReactNode
+  confirmButtonProps?: SurfaceButtonProps
   cancelButtonContent?: React.ReactNode
+  cancelButtonProps?: SurfaceButtonProps
 }
 
 type CustomSurfaceProps<T> = {
   content: (close: (result?: T) => Promise<void>) => React.ReactNode
   options: CustomDialogOptions
-}
-
-function DialogHeading({ options }: { options: DialogOptions }) {
-  return (
-    <DialogHeader>
-      <DialogTitle className="flex flex-row items-center gap-2">
-        {(options.showTitleIcon ?? true) &&
-          (options.titleIcon ?? <AlertCircleIcon className="size-5" />)}
-        {options.title ?? "Dialog"}
-      </DialogTitle>
-    </DialogHeader>
-  )
+  resolveResult: (result: T | undefined) => void
 }
 
 function custom<T = unknown>(
   content: (close: (result?: T) => Promise<void>) => React.ReactNode,
   options: CustomDialogOptions = {}
 ): Promise<T | undefined> {
-  const CustomModal = NiceModal.create<CustomSurfaceProps<T>>(
-    ({ content: renderContent, options: modalOptions }) => {
+  const CustomSurfaceModal = NiceModal.create<CustomSurfaceProps<T>>(
+    ({ content: renderContent, options: modalOptions, resolveResult }) => {
       const modal = useModal()
-      const [closing, setClosing] = React.useState(false)
-      const resolved = React.useRef(false)
-      const removed = React.useRef(false)
+      const { close, contentElement, setContentElement } = useSurfaceLifecycle<T>(
+        modal,
+        resolveResult
+      )
       const closeOnOverlayClick = modalOptions.closeOnOverlayClick ?? true
       const isModal = modalOptions.modal ?? true
-
-      const finishClose = React.useCallback(() => {
-        if (removed.current) return
-
-        removed.current = true
-        modal.resolveHide()
-        modal.remove()
-      }, [modal])
-
-      const handleClose = React.useCallback(
-        async (result?: T) => {
-          if (resolved.current) return
-
-          resolved.current = true
-          modal.resolve(result)
-          setClosing(true)
-          void modal.hide()
-        },
-        [modal]
-      )
 
       React.useEffect(() => {
         if (!modal.visible || closeOnOverlayClick || !isModal) return
 
+        if (!contentElement) return
+
+        const ownerDocument = contentElement.ownerDocument
         const handleKeyDown = (event: KeyboardEvent) => {
-          if (event.key !== "Escape") return
+          if (
+            event.key !== "Escape" ||
+            !contentElement.contains(event.target as Node)
+          ) {
+            return
+          }
 
           event.preventDefault()
           event.stopPropagation()
-          void handleClose()
+          void close()
         }
 
-        document.addEventListener("keydown", handleKeyDown, true)
-        return () => document.removeEventListener("keydown", handleKeyDown, true)
-      }, [closeOnOverlayClick, handleClose, isModal, modal.visible])
+        ownerDocument.addEventListener("keydown", handleKeyDown, true)
+        return () =>
+          ownerDocument.removeEventListener("keydown", handleKeyDown, true)
+      }, [
+        close,
+        closeOnOverlayClick,
+        contentElement,
+        isModal,
+        modal.visible,
+      ])
 
       const contextValue = React.useMemo<SurfaceDialogContextValue>(
-        () => ({
-          close: () => handleClose(),
-          closing,
-          finishClose,
-          open: modal.visible,
-        }),
-        [closing, finishClose, handleClose, modal.visible]
+        () => ({ close: () => close(), setContentElement }),
+        [close, setContentElement]
       )
 
       return (
@@ -225,118 +267,200 @@ function custom<T = unknown>(
             modal={isModal}
             open={modal.visible}
             onOpenChange={(open) => {
-              if (open || !modal.visible || !isModal || !closeOnOverlayClick) {
+              if (
+                open ||
+                !modal.visible ||
+                !isModal ||
+                !closeOnOverlayClick
+              ) {
                 return
               }
 
-              void handleClose()
+              void close()
             }}
           >
-            {renderContent(handleClose)}
+            {renderContent(close)}
           </Dialog>
         </SurfaceDialogContext.Provider>
       )
     }
   )
 
-  return NiceModal.show(CustomModal, { content, options }) as Promise<
-    T | undefined
-  >
+  return new Promise<T | undefined>((resolveResult) => {
+    void NiceModal.show(CustomSurfaceModal, {
+      content,
+      options,
+      resolveResult,
+    })
+  })
+}
+
+function titleIcon(options: DialogOptions) {
+  if (!(options.showTitleIcon ?? true)) return null
+
+  return (
+    <span className="contents" aria-hidden="true">
+      {options.titleIcon ?? <AlertCircleIcon className="size-5" />}
+    </span>
+  )
 }
 
 const dialog = {
   custom,
 
-  alert(options: AlertDialogOptions = {}): Promise<null | undefined> {
-    return custom<null>(
+  async alert(options: AlertDialogOptions = {}): Promise<void> {
+    await custom<null>(
       (close) => (
         <SurfaceDialogContent
+          role="alertdialog"
+          closeButtonLabel={options.closeButtonLabel}
           showCloseButton={options.showCloseButton ?? true}
         >
-          <DialogHeading options={{ ...options, title: options.title ?? "Alert" }} />
+          <DialogHeader>
+            <DialogTitle className="flex flex-row items-center gap-2">
+              {titleIcon(options)}
+              {options.title ?? "Alert"}
+            </DialogTitle>
+          </DialogHeader>
           <div className="flex flex-col items-center gap-3">
-            <div>{options.message}</div>
-            <Button type="button" onClick={() => void close(null)}>
+            <DialogDescription className="text-popover-foreground">
+              {options.message}
+            </DialogDescription>
+            <Button
+              {...options.closeButtonProps}
+              type="button"
+              onClick={() => void close(null)}
+            >
               {options.closeButtonContent ?? "Close"}
             </Button>
           </div>
         </SurfaceDialogContent>
       ),
-      options
+      {
+        modal: options.modal,
+        closeOnOverlayClick: options.closeOnOverlayClick ?? false,
+      }
     )
   },
 
-  confirm(options: ConfirmDialogOptions = {}): Promise<boolean | undefined> {
-    return custom<boolean>(
+  async confirm(options: ConfirmDialogOptions = {}): Promise<boolean> {
+    const result = await custom<boolean>(
       (close) => (
         <SurfaceDialogContent
+          role="alertdialog"
+          closeButtonLabel={options.closeButtonLabel}
           showCloseButton={options.showCloseButton ?? true}
         >
-          <DialogHeading
-            options={{ ...options, title: options.title ?? "Confirm" }}
-          />
+          <DialogHeader>
+            <DialogTitle className="flex flex-row items-center gap-2">
+              {titleIcon(options)}
+              {options.title ?? "Confirm"}
+            </DialogTitle>
+          </DialogHeader>
           <div className="flex flex-col items-center gap-3">
-            <div>{options.message}</div>
+            <DialogDescription className="text-popover-foreground">
+              {options.message}
+            </DialogDescription>
             <div className="flex flex-row gap-3">
               <Button
+                {...options.cancelButtonProps}
                 type="button"
-                variant="outline"
+                variant={options.cancelButtonProps?.variant ?? "outline"}
                 onClick={() => void close(false)}
               >
                 {options.cancelButtonContent ?? "Cancel"}
               </Button>
-              <Button type="button" onClick={() => void close(true)}>
+              <Button
+                {...options.confirmButtonProps}
+                type="button"
+                onClick={() => void close(true)}
+              >
                 {options.confirmButtonContent ?? "Confirm"}
               </Button>
             </div>
           </div>
         </SurfaceDialogContent>
       ),
-      options
+      {
+        modal: options.modal,
+        closeOnOverlayClick: options.closeOnOverlayClick ?? false,
+      }
     )
+
+    return result ?? false
   },
 
-  prompt(
-    options: PromptDialogOptions = {}
-  ): Promise<string | null | undefined> {
-    return custom<string | null>(
-      (close) => {
-        const [inputValue, setInputValue] = React.useState(
-          options.defaultValue ?? ""
-        )
-
-        return (
-          <SurfaceDialogContent
-            showCloseButton={options.showCloseButton ?? true}
+  async prompt(options: PromptDialogOptions = {}): Promise<string | null> {
+    const result = await custom<string | null>(
+      (close) => (
+        <SurfaceDialogContent
+          closeButtonLabel={options.closeButtonLabel}
+          showCloseButton={options.showCloseButton ?? true}
+        >
+          <form
+            className="contents"
+            onSubmit={(event) => {
+              event.preventDefault()
+              const formData = new FormData(event.currentTarget)
+              const value = formData.get("surface-prompt-value")
+              void close(typeof value === "string" ? value : "")
+            }}
           >
-            <DialogHeading
-              options={{ ...options, title: options.title ?? "Prompt" }}
-            />
+            <DialogHeader>
+              <DialogTitle className="flex flex-row items-center gap-2">
+                {titleIcon(options)}
+                {options.title ?? "Prompt"}
+              </DialogTitle>
+            </DialogHeader>
             <div className="flex flex-col items-center gap-3">
-              <div>{options.message}</div>
+              <DialogDescription className="text-popover-foreground">
+                {options.message}
+              </DialogDescription>
               <Input
+                {...options.inputProps}
+                name="surface-prompt-value"
+                aria-label={
+                  options.inputLabel ??
+                  options.inputProps?.["aria-label"] ??
+                  "Input"
+                }
+                defaultValue={options.defaultValue}
                 placeholder={options.placeholder}
-                value={inputValue}
-                onChange={(event) => setInputValue(event.target.value)}
+                onKeyDown={(event) => {
+                  options.inputProps?.onKeyDown?.(event)
+                  if (
+                    event.defaultPrevented ||
+                    event.key !== "Enter" ||
+                    event.nativeEvent.isComposing
+                  ) {
+                    return
+                  }
+
+                  event.preventDefault()
+                  void close(event.currentTarget.value)
+                }}
               />
               <div className="flex flex-row gap-3">
                 <Button
+                  {...options.cancelButtonProps}
                   type="button"
-                  variant="outline"
+                  variant={options.cancelButtonProps?.variant ?? "outline"}
                   onClick={() => void close(null)}
                 >
                   {options.cancelButtonContent ?? "Cancel"}
                 </Button>
-                <Button type="button" onClick={() => void close(inputValue)}>
+                <Button {...options.confirmButtonProps} type="submit">
                   {options.confirmButtonContent ?? "Confirm"}
                 </Button>
               </div>
             </div>
-          </SurfaceDialogContent>
-        )
-      },
+          </form>
+        </SurfaceDialogContent>
+      ),
       options
     )
+
+    return result ?? null
   },
 }
 
@@ -347,5 +471,6 @@ export type {
   CustomDialogOptions,
   DialogOptions,
   PromptDialogOptions,
+  SurfaceButtonProps,
   SurfaceDialogContentProps,
 }

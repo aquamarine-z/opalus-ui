@@ -8,22 +8,25 @@ export default () => {
     const [dialogResult, setDialogResult] = React.useState<string | null>(null);
     const openDialog = async () => {
         const value = await dialog.custom<string>((close) => {
-            const [result, setResult] = React.useState<string>("");
             return <SurfaceDialogContent showCloseButton={false}>
-                <DialogHeader>
-                    <DialogTitle>Dialog</DialogTitle>
-                </DialogHeader>
-                <div className={"py-4"}>This is a custom modal dialog content.</div>
-                <Input value={result} onChange={e => setResult(e.target.value)}/>
-                <Button onClick={async () => {
-                    await close(result);
-                }}>Submit</Button>
+                <form className="contents" onSubmit={event => {
+                    event.preventDefault();
+                    const data = new FormData(event.currentTarget);
+                    void close(String(data.get("result") ?? ""));
+                }}>
+                    <DialogHeader>
+                        <DialogTitle>Dialog</DialogTitle>
+                    </DialogHeader>
+                    <div className={"py-4"}>This is a custom modal dialog content.</div>
+                    <Input name="result" aria-label="Dialog result"/>
+                    <Button type="submit">Submit</Button>
+                </form>
             </SurfaceDialogContent>
         }, {
             modal: false,
             closeOnOverlayClick: true,
         })
-        setDialogResult(value || null);
+        setDialogResult(value ?? null);
     }
     return <div className={"flex flex-col items-center gap-2"}>
         <Button variant={"outline"} onClick={openDialog}>Open Dialog</Button>
