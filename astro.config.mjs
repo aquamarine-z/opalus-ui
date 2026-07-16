@@ -28,7 +28,7 @@ export default defineConfig({
                 items: [
                     {
                         label: 'Surface',
-                        autogenerate: {directory: 'components/surface'}
+                        items: [{ autogenerate: { directory: 'components/surface' } }]
                     }
                 ]
             },
