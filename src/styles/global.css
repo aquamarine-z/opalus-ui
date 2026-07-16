@@ -119,3 +119,8 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Fix Base UI Slider Thumb style conflict in documentation/preview environments */
+[data-slot="slider-thumb"] {
+  position: absolute !important;
+}

@@ -29,6 +29,9 @@ export default defineConfig({
                     {
                         label: 'Surface',
                         items: [{ autogenerate: { directory: 'components/surface' } }]
+                    },
+                    {
+                        slug: 'components/time-picker'
                     }
                 ]
             },
