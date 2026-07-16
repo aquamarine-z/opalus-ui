@@ -29,6 +29,7 @@
       ],
       "registryDependencies": [
         "dialog",
+        "drawer",
         "input",
         "button"
       ],

@@ -9,7 +9,7 @@ export default () => {
             title: "Confirm Dialog",
             message: "Are you sure to perform this operation?",
             showCloseButton: false,
-            closeOnOverlayClick: false,
+            dismissible: false,
             modal: false,
         })
         await dialog.alert({

@@ -1,0 +1,64 @@
+---
+title: Surface
+description: Promise-based imperative surfaces built from shadcn components.
+sidebar:
+  order: 1
+---
+
+import {InstallationGuide} from "../../../../components/installation-guide.js";
+
+Surface opens promise-based UI surfaces from event handlers and other
+imperative workflows. Each surface composes the shadcn components already
+installed in the consumer project, so it inherits the project's selected
+primitive system, style, and theme.
+
+## Installation
+
+<InstallationGuide componentName="surface" client:load/>
+
+Surface uses `@ebay/nice-modal-react` to register and control instances. Render
+exactly one `NiceModal.Provider` above every component that can open a Surface:
+
+```tsx
+import NiceModal from "@ebay/nice-modal-react"
+
+export function App({ children }: { children: React.ReactNode }) {
+  return <NiceModal.Provider>{children}</NiceModal.Provider>
+}
+```
+
+Do not render a separate provider for each route or feature. NiceModal keeps its
+dispatch function and modal registry at module scope, so multiple providers in
+the same JavaScript runtime can overwrite one another. Multiple browser pages or
+tabs are isolated and do not share this state.
+
+## Surface Types
+
+### Dialog
+
+Dialog supports custom content and the common Alert, Confirm, and Prompt
+workflows. It also supports modal and non-modal interaction modes.
+
+[Read the Dialog documentation](/components/surface/dialog/)
+
+### Drawer
+
+Drawer supports custom content, typed action selection, confirmation, and
+prompt workflows. It can enter from any viewport edge and supports modal,
+non-modal, dismissible, and snap-point behavior.
+
+[Read the Drawer documentation](/components/surface/drawer/)
+
+## Provider and Root Constraints
+
+- Use one `NiceModal.Provider` for one JavaScript runtime.
+- Routes rendered below that provider can all open Surface instances.
+- Browser tabs and separate pages do not share Provider or Surface state.
+- Multiple React roots that share one copy of NiceModal must not mount separate
+  NiceModal providers; NiceModal itself uses module-level dispatch and registry
+  state.
+- A micro-frontend that requires an independent provider must isolate its
+  NiceModal runtime or use a provider-scoped modal manager instead.
+
+Surface does not maintain a module-level dialog stack. Animation and Escape
+coordination are scoped to each instance and its rendered content.

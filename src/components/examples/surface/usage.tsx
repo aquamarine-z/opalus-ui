@@ -24,7 +24,7 @@ export default () => {
             </SurfaceDialogContent>
         }, {
             modal: false,
-            closeOnOverlayClick: true,
+            dismissible: true,
         })
         setDialogResult(value ?? null);
     }

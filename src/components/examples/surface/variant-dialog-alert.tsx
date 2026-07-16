@@ -7,7 +7,7 @@ export default () => {
             title: "Alert Dialog",
             message: "This is an alert dialog using the alert variant of the modal function.",
             showCloseButton: false,
-            closeOnOverlayClick: false,
+            dismissible: false,
             modal: false,
         })
     }

@@ -20,7 +20,7 @@ export default () => {
                 </div>
                 <Button onClick={() => close()}>Close</Button>
             </SurfaceDialogContent>
-        }, {closeOnOverlayClick: true})
+         }, {dismissible: true})
     }
     return <div className={"flex flex-col items-center gap-2"}>
         <Button variant={"outline"} onClick={openModal}>Open Modal</Button>

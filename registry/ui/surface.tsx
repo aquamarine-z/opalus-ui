@@ -12,23 +12,88 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import {
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
 
 type ContentElement = HTMLDivElement | null
 
-type SurfaceDialogContextValue = {
+type SurfaceContextValue = {
   close: () => Promise<void>
+  modal: boolean
   setContentElement: (element: ContentElement) => void
 }
 
-const SurfaceDialogContext = React.createContext<SurfaceDialogContextValue | null>(
-  null
-)
+const SurfaceContext = React.createContext<SurfaceContextValue | null>(null)
+
+function hideNonModalOverlay(
+  contentElement: HTMLDivElement,
+  portalSlot: string,
+  overlaySlot: string
+) {
+  const portalElement = contentElement.closest(`[data-slot="${portalSlot}"]`)
+  let overlayElement = portalElement?.querySelector<HTMLElement>(
+    `:scope > [data-slot="${overlaySlot}"]`
+  )
+
+  let siblingElement = contentElement.previousElementSibling
+  while (!overlayElement && siblingElement) {
+    if (
+      siblingElement instanceof HTMLElement &&
+      siblingElement.dataset.slot === overlaySlot
+    ) {
+      overlayElement = siblingElement
+      break
+    }
+
+    siblingElement = siblingElement.previousElementSibling
+  }
+
+  if (overlayElement) overlayElement.hidden = true
+}
+
+function useSurfaceContentRef(
+  componentName: string,
+  portalSlot: string,
+  overlaySlot: string,
+  ref: React.Ref<HTMLDivElement> | undefined
+) {
+  const context = React.useContext(SurfaceContext)
+
+  const setContentRef = React.useCallback(
+    (element: ContentElement) => {
+      context?.setContentElement(element)
+
+      if (element && context?.modal === false) {
+        hideNonModalOverlay(element, portalSlot, overlaySlot)
+      }
+
+      if (typeof ref === "function") {
+        ref(element)
+      } else if (ref) {
+        ref.current = element
+      }
+    },
+    [context, overlaySlot, portalSlot, ref]
+  )
+
+  if (!context) {
+    throw new Error(`${componentName} must be rendered inside a Surface.`)
+  }
+
+  return { context, setContentRef }
+}
 
 function useSurfaceLifecycle<T>(
   modal: ReturnType<typeof useModal>,
-  resolveResult: (result: T | undefined) => void
+  resolveResult: (result: T | null | undefined) => void
 ) {
   const modalRef = React.useRef(modal)
   const contentRef = React.useRef<ContentElement>(null)
@@ -116,24 +181,12 @@ function SurfaceDialogContent({
   ref,
   ...props
 }: SurfaceDialogContentProps) {
-  const context = React.useContext(SurfaceDialogContext)
-
-  const setContentRef = React.useCallback(
-    (element: ContentElement) => {
-      context?.setContentElement(element)
-
-      if (typeof ref === "function") {
-        ref(element)
-      } else if (ref) {
-        ref.current = element
-      }
-    },
-    [context, ref]
+  const { context, setContentRef } = useSurfaceContentRef(
+    "SurfaceDialogContent",
+    "dialog-portal",
+    "dialog-overlay",
+    ref
   )
-
-  if (!context) {
-    throw new Error("SurfaceDialogContent must be rendered inside dialog.custom().")
-  }
 
   return (
     <DialogContent
@@ -159,6 +212,45 @@ function SurfaceDialogContent({
   )
 }
 
+type SurfaceDrawerContentProps = React.ComponentProps<typeof DrawerContent> & {
+  closeButtonLabel?: string
+  showCloseButton?: boolean
+}
+
+function SurfaceDrawerContent({
+  className,
+  children,
+  closeButtonLabel = "Close",
+  showCloseButton = true,
+  ref,
+  ...props
+}: SurfaceDrawerContentProps) {
+  const { context, setContentRef } = useSurfaceContentRef(
+    "SurfaceDrawerContent",
+    "drawer-portal",
+    "drawer-overlay",
+    ref
+  )
+
+  return (
+    <DrawerContent ref={setContentRef} className={className} {...props}>
+      {children}
+      {showCloseButton && (
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-sm"
+          className="absolute top-3 right-3"
+          aria-label={closeButtonLabel}
+          onClick={() => void context.close()}
+        >
+          <XIcon aria-hidden="true" />
+        </Button>
+      )}
+    </DrawerContent>
+  )
+}
+
 type SurfaceButtonProps = Omit<
   React.ComponentProps<typeof Button>,
   "children" | "onClick" | "type"
@@ -166,7 +258,7 @@ type SurfaceButtonProps = Omit<
 
 type CustomDialogOptions = {
   modal?: boolean
-  closeOnOverlayClick?: boolean
+  dismissible?: boolean
 }
 
 type DialogOptions = CustomDialogOptions & {
@@ -206,28 +298,79 @@ type PromptDialogOptions = DialogOptions & {
   cancelButtonProps?: SurfaceButtonProps
 }
 
-type CustomSurfaceProps<T> = {
+type DrawerSide = "top" | "right" | "bottom" | "left"
+type DrawerSwipeDirection = "up" | "right" | "down" | "left"
+type DrawerSnapPoint = number | `${number}px` | `${number}rem`
+
+type CustomDrawerOptions = {
+  side?: DrawerSide
+  modal?: boolean
+  dismissible?: boolean
+  snapPoints?: DrawerSnapPoint[]
+}
+
+type DrawerOptions = CustomDrawerOptions & {
+  title?: React.ReactNode
+  message?: React.ReactNode
+  showCloseButton?: boolean
+  closeButtonLabel?: string
+}
+
+type DrawerActionItem<T> = {
+  value: T
+  label: React.ReactNode
+  buttonProps?: SurfaceButtonProps
+}
+
+type ActionDrawerOptions<T> = DrawerOptions & {
+  actions: readonly DrawerActionItem<T>[]
+  cancelButtonContent?: React.ReactNode
+  cancelButtonProps?: SurfaceButtonProps
+}
+
+type ConfirmDrawerOptions = DrawerOptions & {
+  confirmButtonContent?: React.ReactNode
+  confirmButtonProps?: SurfaceButtonProps
+  cancelButtonContent?: React.ReactNode
+  cancelButtonProps?: SurfaceButtonProps
+}
+
+type PromptDrawerOptions = DrawerOptions & {
+  inputLabel?: string
+  defaultValue?: string
+  placeholder?: string
+  inputProps?: Omit<
+    React.ComponentProps<typeof Input>,
+    "defaultValue" | "name" | "value"
+  >
+  confirmButtonContent?: React.ReactNode
+  confirmButtonProps?: SurfaceButtonProps
+  cancelButtonContent?: React.ReactNode
+  cancelButtonProps?: SurfaceButtonProps
+}
+
+type CustomDialogSurfaceProps<T> = {
   content: (close: (result?: T) => Promise<void>) => React.ReactNode
   options: CustomDialogOptions
-  resolveResult: (result: T | undefined) => void
+  resolveResult: (result: T | null | undefined) => void
 }
 
 function custom<T = unknown>(
   content: (close: (result?: T) => Promise<void>) => React.ReactNode,
   options: CustomDialogOptions = {}
-): Promise<T | undefined> {
-  const CustomSurfaceModal = NiceModal.create<CustomSurfaceProps<T>>(
+): Promise<T | null> {
+  const CustomSurfaceModal = NiceModal.create<CustomDialogSurfaceProps<T>>(
     ({ content: renderContent, options: modalOptions, resolveResult }) => {
       const modal = useModal()
       const { close, contentElement, setContentElement } = useSurfaceLifecycle<T>(
         modal,
         resolveResult
       )
-      const closeOnOverlayClick = modalOptions.closeOnOverlayClick ?? true
       const isModal = modalOptions.modal ?? true
+      const isDismissible = modalOptions.dismissible ?? isModal
 
       React.useEffect(() => {
-        if (!modal.visible || closeOnOverlayClick || !isModal) return
+        if (!modal.visible || isDismissible || !isModal) return
 
         if (!contentElement) return
 
@@ -250,19 +393,19 @@ function custom<T = unknown>(
           ownerDocument.removeEventListener("keydown", handleKeyDown, true)
       }, [
         close,
-        closeOnOverlayClick,
+        isDismissible,
         contentElement,
         isModal,
         modal.visible,
       ])
 
-      const contextValue = React.useMemo<SurfaceDialogContextValue>(
-        () => ({ close: () => close(), setContentElement }),
-        [close, setContentElement]
+      const contextValue = React.useMemo<SurfaceContextValue>(
+        () => ({ close: () => close(), modal: isModal, setContentElement }),
+        [close, isModal, setContentElement]
       )
 
       return (
-        <SurfaceDialogContext.Provider value={contextValue}>
+        <SurfaceContext.Provider value={contextValue}>
           <Dialog
             modal={isModal}
             open={modal.visible}
@@ -271,7 +414,7 @@ function custom<T = unknown>(
                 open ||
                 !modal.visible ||
                 !isModal ||
-                !closeOnOverlayClick
+                !isDismissible
               ) {
                 return
               }
@@ -281,16 +424,91 @@ function custom<T = unknown>(
           >
             {renderContent(close)}
           </Dialog>
-        </SurfaceDialogContext.Provider>
+        </SurfaceContext.Provider>
       )
     }
   )
 
-  return new Promise<T | undefined>((resolveResult) => {
+  return new Promise<T | null>((resolveResult) => {
     void NiceModal.show(CustomSurfaceModal, {
       content,
       options,
-      resolveResult,
+      resolveResult: (result) => resolveResult(result ?? null),
+    })
+  })
+}
+
+type DrawerSurfaceProps<T> = {
+  content: (close: (result?: T) => Promise<void>) => React.ReactNode
+  options: CustomDrawerOptions
+  resolveResult: (result: T | null | undefined) => void
+}
+
+type DrawerCompatibilityProps = {
+  direction: DrawerSide
+  swipeDirection: DrawerSwipeDirection
+  showSwipeHandle: boolean
+  dismissible: boolean
+  disablePointerDismissal: boolean
+}
+
+function drawerSwipeDirection(side: DrawerSide): DrawerSwipeDirection {
+  if (side === "top") return "up"
+  if (side === "bottom") return "down"
+  return side
+}
+
+function openDrawer<T = unknown>(
+  content: (close: (result?: T) => Promise<void>) => React.ReactNode,
+  options: CustomDrawerOptions = {}
+): Promise<T | null> {
+  const CustomSurfaceDrawer = NiceModal.create<DrawerSurfaceProps<T>>(
+    ({ content: renderContent, options: drawerOptions, resolveResult }) => {
+      const modal = useModal()
+      const { close, setContentElement } = useSurfaceLifecycle<T>(
+        modal,
+        resolveResult
+      )
+      const isModal = drawerOptions.modal ?? true
+      const isDismissible = drawerOptions.dismissible ?? isModal
+      const side = drawerOptions.side ?? "bottom"
+      const compatibilityProps: DrawerCompatibilityProps = {
+        direction: side,
+        swipeDirection: drawerSwipeDirection(side),
+        showSwipeHandle: side === "bottom",
+        dismissible: isDismissible,
+        disablePointerDismissal: !isDismissible,
+      }
+
+      const contextValue = React.useMemo<SurfaceContextValue>(
+        () => ({ close: () => close(), modal: isModal, setContentElement }),
+        [close, isModal, setContentElement]
+      )
+
+      return (
+        <SurfaceContext.Provider value={contextValue}>
+          <Drawer
+            {...compatibilityProps}
+            modal={isModal}
+            open={modal.visible}
+            snapPoints={drawerOptions.snapPoints}
+            onOpenChange={(open) => {
+              if (open || !modal.visible || !isDismissible) return
+              void close()
+            }}
+          >
+            {renderContent(close)}
+          </Drawer>
+        </SurfaceContext.Provider>
+      )
+    }
+  )
+
+  return new Promise<T | null>((resolveResult) => {
+    void NiceModal.show(CustomSurfaceDrawer, {
+      content,
+      options,
+      resolveResult: (result) => resolveResult(result ?? null),
     })
   })
 }
@@ -338,12 +556,12 @@ const dialog = {
       ),
       {
         modal: options.modal,
-        closeOnOverlayClick: options.closeOnOverlayClick ?? false,
+        dismissible: options.dismissible ?? false,
       }
     )
   },
 
-  async confirm(options: ConfirmDialogOptions = {}): Promise<boolean> {
+  async confirm(options: ConfirmDialogOptions = {}): Promise<boolean | null> {
     const result = await custom<boolean>(
       (close) => (
         <SurfaceDialogContent
@@ -383,11 +601,11 @@ const dialog = {
       ),
       {
         modal: options.modal,
-        closeOnOverlayClick: options.closeOnOverlayClick ?? false,
+        dismissible: options.dismissible ?? true,
       }
     )
 
-    return result ?? false
+    return result
   },
 
   async prompt(options: PromptDialogOptions = {}): Promise<string | null> {
@@ -464,13 +682,182 @@ const dialog = {
   },
 }
 
-export { dialog, SurfaceDialogContent }
+const drawer = {
+  custom: openDrawer,
+
+  async actions<T>(options: ActionDrawerOptions<T>): Promise<T | null> {
+    const result = await openDrawer<T | null>(
+      (close) => (
+        <SurfaceDrawerContent
+          closeButtonLabel={options.closeButtonLabel}
+          showCloseButton={options.showCloseButton ?? true}
+        >
+          <DrawerHeader>
+            <DrawerTitle>{options.title ?? "Choose an action"}</DrawerTitle>
+            {options.message !== undefined && (
+              <DrawerDescription>{options.message}</DrawerDescription>
+            )}
+          </DrawerHeader>
+          <div className="flex min-h-0 flex-col gap-2 overflow-y-auto p-4">
+            {options.actions.map((action, index) => (
+              <Button
+                {...action.buttonProps}
+                key={index}
+                type="button"
+                className={cn(
+                  "w-full justify-start",
+                  action.buttonProps?.className
+                )}
+                onClick={() => void close(action.value)}
+              >
+                {action.label}
+              </Button>
+            ))}
+          </div>
+          <DrawerFooter>
+            <Button
+              {...options.cancelButtonProps}
+              type="button"
+              variant={options.cancelButtonProps?.variant ?? "outline"}
+              onClick={() => void close(null)}
+            >
+              {options.cancelButtonContent ?? "Cancel"}
+            </Button>
+          </DrawerFooter>
+        </SurfaceDrawerContent>
+      ),
+      options
+    )
+
+    return result ?? null
+  },
+
+  async confirm(options: ConfirmDrawerOptions = {}): Promise<boolean | null> {
+    const result = await openDrawer<boolean>(
+      (close) => (
+        <SurfaceDrawerContent
+          role="alertdialog"
+          closeButtonLabel={options.closeButtonLabel}
+          showCloseButton={options.showCloseButton ?? true}
+        >
+          <DrawerHeader>
+            <DrawerTitle>{options.title ?? "Confirm"}</DrawerTitle>
+            {options.message !== undefined && (
+              <DrawerDescription>{options.message}</DrawerDescription>
+            )}
+          </DrawerHeader>
+          <DrawerFooter>
+            <Button
+              {...options.cancelButtonProps}
+              type="button"
+              variant={options.cancelButtonProps?.variant ?? "outline"}
+              onClick={() => void close(false)}
+            >
+              {options.cancelButtonContent ?? "Cancel"}
+            </Button>
+            <Button
+              {...options.confirmButtonProps}
+              type="button"
+              onClick={() => void close(true)}
+            >
+              {options.confirmButtonContent ?? "Confirm"}
+            </Button>
+          </DrawerFooter>
+        </SurfaceDrawerContent>
+      ),
+      options
+    )
+
+    return result
+  },
+
+  async prompt(options: PromptDrawerOptions = {}): Promise<string | null> {
+    const result = await openDrawer<string | null>(
+      (close) => (
+        <SurfaceDrawerContent
+          closeButtonLabel={options.closeButtonLabel}
+          showCloseButton={options.showCloseButton ?? true}
+        >
+          <form
+            className="contents"
+            onSubmit={(event) => {
+              event.preventDefault()
+              const formData = new FormData(event.currentTarget)
+              const value = formData.get("surface-drawer-prompt-value")
+              void close(typeof value === "string" ? value : "")
+            }}
+          >
+            <DrawerHeader>
+              <DrawerTitle>{options.title ?? "Prompt"}</DrawerTitle>
+              {options.message !== undefined && (
+                <DrawerDescription>{options.message}</DrawerDescription>
+              )}
+            </DrawerHeader>
+            <div className="p-4">
+              <Input
+                {...options.inputProps}
+                name="surface-drawer-prompt-value"
+                aria-label={
+                  options.inputLabel ??
+                  options.inputProps?.["aria-label"] ??
+                  "Input"
+                }
+                defaultValue={options.defaultValue}
+                placeholder={options.placeholder}
+                onKeyDown={(event) => {
+                  options.inputProps?.onKeyDown?.(event)
+                  if (
+                    event.defaultPrevented ||
+                    event.key !== "Enter" ||
+                    event.nativeEvent.isComposing
+                  ) {
+                    return
+                  }
+
+                  event.preventDefault()
+                  void close(event.currentTarget.value)
+                }}
+              />
+            </div>
+            <DrawerFooter>
+              <Button
+                {...options.cancelButtonProps}
+                type="button"
+                variant={options.cancelButtonProps?.variant ?? "outline"}
+                onClick={() => void close(null)}
+              >
+                {options.cancelButtonContent ?? "Cancel"}
+              </Button>
+              <Button {...options.confirmButtonProps} type="submit">
+                {options.confirmButtonContent ?? "Confirm"}
+              </Button>
+            </DrawerFooter>
+          </form>
+        </SurfaceDrawerContent>
+      ),
+      options
+    )
+
+    return result ?? null
+  },
+}
+
+export { dialog, drawer, SurfaceDialogContent, SurfaceDrawerContent }
 export type {
+  ActionDrawerOptions,
   AlertDialogOptions,
+  ConfirmDrawerOptions,
   ConfirmDialogOptions,
   CustomDialogOptions,
+  CustomDrawerOptions,
   DialogOptions,
+  DrawerActionItem,
+  DrawerOptions,
+  DrawerSide,
+  DrawerSnapPoint,
+  PromptDrawerOptions,
   PromptDialogOptions,
   SurfaceButtonProps,
   SurfaceDialogContentProps,
+  SurfaceDrawerContentProps,
 }

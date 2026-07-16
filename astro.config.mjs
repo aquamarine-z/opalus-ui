@@ -15,7 +15,7 @@ export default defineConfig({
     },
     integrations: [starlight({
         components: {
-            // 重写默认的 `SocialIcons` 组件。
+            // 重写默认的 `PageFrame` 组件。
             PageFrame: './src/components/override-components/PageFrame.astro',
         },
         title: 'Opalus UI',
@@ -23,7 +23,15 @@ export default defineConfig({
         social: [{icon: 'github', label: 'GitHub', href: 'https://github.com/aquamarine-z/opalus-ui'}],
         sidebar: [
             {label: 'Getting Started', items: [{autogenerate: {directory: 'get-started'}}]},
-            {label: 'Components', items: [{autogenerate: {directory: 'components'}}]},
+            {
+                label: 'Components',
+                items: [
+                    {
+                        label: 'Surface',
+                        autogenerate: {directory: 'components/surface'}
+                    }
+                ]
+            },
         ],
         plugins: [catppuccin({
             dark: {flavor: "macchiato", accent: "sky"},

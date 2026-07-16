@@ -1,0 +1,213 @@
+---
+title: Drawer
+description: Promise-based custom, action, confirm, and prompt drawers.
+sidebar:
+  order: 2
+---
+
+import {ComponentExampleDisplayer} from "../../../../components/example-displayer/component-example-displayer.js";
+
+Drawer opens promise-based interactions from any viewport edge. It composes the
+shadcn Drawer, Button, and Input components already installed in the consumer
+project, so Base UI projects use the Base UI Drawer and Radix projects use Vaul.
+
+Complete the shared [Surface installation and Provider
+setup](/components/surface/) before opening a Drawer.
+
+<ComponentExampleDisplayer componentName="surface" exampleName="drawer-usage" client:load/>
+
+## Directions
+
+Use `side` to select the edge where the Drawer is attached and the direction it
+uses to enter and dismiss:
+
+| `side` | Entry edge | Dismiss gesture |
+| --- | --- | --- |
+| `"top"` | Top | Swipe up |
+| `"right"` | Right | Swipe right |
+| `"bottom"` | Bottom | Swipe down |
+| `"left"` | Left | Swipe left |
+
+`"bottom"` is the default. Surface maps these values to the installed primitive:
+Base UI receives `swipeDirection`, while Vaul receives `direction`.
+
+## Lifecycle
+
+Every call creates an independent NiceModal instance. Explicit actions, the
+close icon, Escape, an allowed overlay press, and a complete dismiss gesture use
+the same idempotent close sequence.
+
+Surface waits for the finite Web Animations attached to
+`SurfaceDrawerContent`. The public Promise resolves and the NiceModal instance
+is removed only after those animations settle. Surface does not use a fixed
+`400ms`, `500ms`, or other JavaScript close timeout.
+
+Moving between snap points does not close the Drawer and does not resolve the
+Promise.
+
+## Shared Options
+
+```tsx
+type DrawerSide = "top" | "right" | "bottom" | "left"
+type DrawerSnapPoint = number | `${number}px` | `${number}rem`
+
+type CustomDrawerOptions = {
+  side?: DrawerSide
+  modal?: boolean
+  dismissible?: boolean
+  snapPoints?: DrawerSnapPoint[]
+}
+
+type DrawerOptions = CustomDrawerOptions & {
+  title?: React.ReactNode
+  message?: React.ReactNode
+  showCloseButton?: boolean
+  closeButtonLabel?: string
+}
+```
+
+| Option | Default | Behavior |
+| --- | --- | --- |
+| `side` | `"bottom"` | Selects the entry edge and dismiss gesture. |
+| `modal` | `true` | Traps focus, locks the page, and displays the shadcn overlay. |
+| `dismissible` | `true` | Allows overlay, Escape, and swipe dismissal. |
+| `snapPoints` | none | Defines positions from least to most visible. The first point is initial. |
+| `showCloseButton` | `true` | Shows an icon-only close action. |
+| `closeButtonLabel` | `"Close"` | Accessible name for the close action. |
+
+Numbers from `0` to `1` represent a viewport fraction along the active axis.
+Values greater than `1`, `px`, and `rem` values represent fixed sizes.
+
+## Return Values
+
+| API | Explicit result | Cancel, close icon, or dismissal |
+| --- | --- | --- |
+| `drawer.custom<T>` | Value passed to `close(value)` | `null` |
+| `drawer.actions<T>` | Selected action value | `null` |
+| `drawer.confirm` | `true` | `false` (Cancel button) or `null` (close icon/dismissal) |
+| `drawer.prompt` | Current input string, including an empty string | `null` |
+
+When `dismissible` is `false`, primitive dismissal attempts keep the Drawer and
+its Promise open. Explicit actions still close it.
+
+## Custom Drawer
+
+```tsx
+drawer.custom<T>(
+  content: (close: (result?: T) => Promise<void>) => React.ReactNode,
+  options?: CustomDrawerOptions
+): Promise<T | null>
+```
+
+`SurfaceDrawerContent` is the only custom Drawer layout adapter exported by
+Surface. Compose everything else from the installed shadcn components:
+
+```tsx
+const result = await drawer.custom<string>(
+  (close) => (
+    <SurfaceDrawerContent>
+      <DrawerHeader>
+        <DrawerTitle>Filters</DrawerTitle>
+        <DrawerDescription>Update the visible records.</DrawerDescription>
+      </DrawerHeader>
+      <div className="p-4">...</div>
+      <DrawerFooter>
+        <Button onClick={() => void close("applied")}>Apply</Button>
+      </DrawerFooter>
+    </SurfaceDrawerContent>
+  ),
+  { side: "right" }
+)
+```
+
+Do not call Hooks directly inside the `drawer.custom` render callback. Render a
+normal React component from the callback when the content needs state, effects,
+or refs.
+
+## Non-modal Drawer
+
+Set `modal` to `false` to keep the page interactive. Surface removes the visual
+overlay for both primitive families. `dismissible` defaults to `false` in this
+mode, so background interaction does not close the Drawer.
+
+<ComponentExampleDisplayer componentName="surface" exampleName="example-drawer-non-modal" client:load/>
+
+
+## Action Drawer
+
+```tsx
+type DrawerActionItem<T> = {
+  value: T
+  label: React.ReactNode
+  buttonProps?: SurfaceButtonProps
+}
+
+drawer.actions<T>(options: ActionDrawerOptions<T>): Promise<T | null>
+```
+
+```tsx
+const action = await drawer.actions<"rename" | "archive">({
+  title: "Project actions",
+  message: "Choose what to do with this project.",
+  actions: [
+    { value: "rename", label: "Rename" },
+    {
+      value: "archive",
+      label: "Archive",
+      buttonProps: { variant: "destructive" },
+    },
+  ],
+})
+```
+
+<ComponentExampleDisplayer componentName="surface" exampleName="variant-drawer-actions" client:load/>
+
+## Confirm Drawer
+
+```tsx
+drawer.confirm(options?: ConfirmDrawerOptions): Promise<boolean | null>
+```
+
+Confirm returns `true` from the confirm action, `false` from the cancel action, and `null` from the close icon, Escape, overlay dismissal, and swipe dismissal.
+
+<ComponentExampleDisplayer componentName="surface" exampleName="variant-drawer-confirm" client:load/>
+
+## Prompt Drawer
+
+```tsx
+drawer.prompt(options?: PromptDrawerOptions): Promise<string | null>
+```
+
+Prompt reuses the shadcn Input. It supports `inputLabel`, `defaultValue`,
+`placeholder`, `inputProps`, and separate confirm/cancel Button props. Enter
+submits the current value, while IME composition Enter events are ignored.
+
+<ComponentExampleDisplayer componentName="surface" exampleName="variant-drawer-prompt" client:load/>
+
+
+## Snap Points
+
+Snap points work along the active axis for all four directions. They must be
+ordered from the least visible position to the most visible position.
+
+```tsx
+await drawer.custom((close) => <FilterDrawer close={close} />, {
+  side: "bottom",
+  snapPoints: [0.35, 0.8],
+})
+```
+
+<ComponentExampleDisplayer componentName="surface" exampleName="example-drawer-snap-points" client:load/>
+
+## Accessibility and Gestures
+
+- DrawerTitle and DrawerDescription provide the accessible name and description.
+- Confirm exposes `role="alertdialog"`; the other variants use the Drawer dialog role.
+- The close icon has a configurable `aria-label`.
+- Prompt always supplies an accessible Input name.
+- The installed shadcn primitive owns focus trapping, restoration, page locking,
+  keyboard dismissal, pointer dismissal, and swipe recognition.
+- `dismissible=false` preserves an explicit action path while preventing
+  primitive dismissal.
+- Reduced-motion behavior remains controlled by the consumer's shadcn theme and
+  animation utilities.

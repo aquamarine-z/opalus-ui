@@ -117,6 +117,50 @@ describe("surface", () => {
     await expect(resultPromise).resolves.toBe("Opalus")
   })
 
+  it("hides the overlay only for non-modal surfaces", async () => {
+    const user = userEvent.setup()
+    renderModalProvider()
+
+    const nonModalPromise = dialog.custom(
+      (close) => (
+        <SurfaceDialogContent showCloseButton={false}>
+          <DialogHeader>
+            <DialogTitle>Non-modal dialog</DialogTitle>
+          </DialogHeader>
+          <Button onClick={() => void close()}>Close non-modal</Button>
+        </SurfaceDialogContent>
+      ),
+      { modal: false }
+    )
+
+    await screen.findByRole("dialog", { name: "Non-modal dialog" })
+    const nonModalOverlay = document.querySelector<HTMLElement>(
+      '[data-slot="dialog-overlay"]'
+    )
+    expect(nonModalOverlay?.hidden).toBe(true)
+
+    await user.click(screen.getByRole("button", { name: "Close non-modal" }))
+    await nonModalPromise
+
+    const modalPromise = dialog.custom((close) => (
+      <SurfaceDialogContent showCloseButton={false}>
+        <DialogHeader>
+          <DialogTitle>Modal dialog</DialogTitle>
+        </DialogHeader>
+        <Button onClick={() => void close()}>Close modal</Button>
+      </SurfaceDialogContent>
+    ))
+
+    await screen.findByRole("dialog", { name: "Modal dialog" })
+    const modalOverlay = document.querySelector<HTMLElement>(
+      '[data-slot="dialog-overlay"]'
+    )
+    expect(modalOverlay?.hidden).toBe(false)
+
+    await user.click(screen.getByRole("button", { name: "Close modal" }))
+    await modalPromise
+  })
+
   it("closes only the topmost stacked surface with Escape", async () => {
     renderModalProvider()
 
@@ -128,7 +172,7 @@ describe("surface", () => {
           </DialogHeader>
         </SurfaceDialogContent>
       ),
-      { closeOnOverlayClick: false }
+      { dismissible: false }
     )
     const firstDialog = await screen.findByRole("dialog", {
       name: "First dialog",
@@ -142,7 +186,7 @@ describe("surface", () => {
           </DialogHeader>
         </SurfaceDialogContent>
       ),
-      { closeOnOverlayClick: false }
+      { dismissible: false }
     )
     const secondDialog = await screen.findByRole("dialog", {
       name: "Second dialog",
@@ -156,7 +200,7 @@ describe("surface", () => {
     const secondCloseButton = secondDialog.querySelector("button")
     expect(secondCloseButton).not.toBeNull()
     fireEvent.keyDown(secondCloseButton as HTMLButtonElement, { key: "Escape" })
-    await expect(secondPromise).resolves.toBeUndefined()
+    await expect(secondPromise).resolves.toBeNull()
 
     expect(firstSettled).toBe(false)
     expect(
@@ -166,6 +210,6 @@ describe("surface", () => {
     const firstCloseButton = firstDialog.querySelector("button")
     expect(firstCloseButton).not.toBeNull()
     fireEvent.keyDown(firstCloseButton as HTMLButtonElement, { key: "Escape" })
-    await expect(firstPromise).resolves.toBeUndefined()
+    await expect(firstPromise).resolves.toBeNull()
   })
 })
