@@ -1,0 +1,16 @@
+---
+import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
+---
+
+<StarlightPage
+    frontmatter={{
+        title: 'Page not found',
+        description: 'The requested Opalus UI documentation page does not exist.',
+        template: 'splash',
+        pagefind: false,
+        hero: {
+            tagline: 'The requested documentation page could not be found.',
+            actions: [{ text: 'Return to documentation', link: '/' }],
+        },
+    }}
+/>

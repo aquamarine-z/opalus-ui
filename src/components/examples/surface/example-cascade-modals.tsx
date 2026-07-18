@@ -9,7 +9,7 @@ import {dialog, SurfaceDialogContent} from "../../../../registry/ui/surface.tsx"
 type CascadeDialogContentProps = {
     close: (result?: number) => Promise<void>;
     level: number;
-    openNext: (level: number) => Promise<number | undefined>;
+    openNext: (level: number) => Promise<number | null>;
 };
 
 function CascadeDialogContent({close, level, openNext}: CascadeDialogContentProps) {
@@ -36,7 +36,7 @@ function CascadeDialogContent({close, level, openNext}: CascadeDialogContentProp
                 className={"px-4 py-2 text-white rounded "}
                 onClick={async () => {
                     const result = await openNext(nextLevel);
-                    if (result !== undefined) setReturnValue(result);
+                    if (result !== null) setReturnValue(result);
                 }}
             >
                 Open Next Level

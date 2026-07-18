@@ -27,11 +27,53 @@ type ContentElement = HTMLDivElement | null
 
 type SurfaceContextValue = {
   close: () => Promise<void>
+  drawerSnapAxis: "x" | "y" | null
   modal: boolean
   setContentElement: (element: ContentElement) => void
 }
 
+type SurfaceRootCompatibilityProps = {
+  onOpenChangeComplete?: (open: boolean) => void
+}
+
 const SurfaceContext = React.createContext<SurfaceContextValue | null>(null)
+
+function useNonModalPageAccess(
+  contentElement: ContentElement,
+  enabled: boolean
+) {
+  React.useEffect(() => {
+    if (!contentElement || !enabled) return
+
+    const ownerDocument = contentElement.ownerDocument
+    const revealPage = () => {
+      ownerDocument
+        .querySelectorAll<HTMLElement>(
+          '[data-aria-hidden="true"][aria-hidden="true"]'
+        )
+        .forEach((element) => {
+          if (
+            element.contains(contentElement) ||
+            contentElement.contains(element)
+          ) {
+            return
+          }
+
+          element.removeAttribute("aria-hidden")
+        })
+    }
+
+    revealPage()
+    const observer = new MutationObserver(revealPage)
+    observer.observe(ownerDocument.body, {
+      attributeFilter: ["aria-hidden", "data-aria-hidden"],
+      attributes: true,
+      subtree: true,
+    })
+
+    return () => observer.disconnect()
+  }, [contentElement, enabled])
+}
 
 function hideNonModalOverlay(
   contentElement: HTMLDivElement,
@@ -133,36 +175,55 @@ function useSurfaceLifecycle<T>(
     return closePromiseRef.current
   }, [])
 
+  const finishWhenAnimationsComplete = React.useCallback(() => {
+    const hasRunningAnimation = (
+      contentRef.current?.getAnimations() ?? []
+    ).some(
+      (animation) =>
+        animation.playState === "running" &&
+        animation.playbackRate !== 0 &&
+        animation.effect?.getComputedTiming().iterations !== Infinity
+    )
+
+    if (hasRunningAnimation) return false
+
+    finishClose()
+    return true
+  }, [finishClose])
+
+  const handleOpenChangeComplete = React.useCallback(
+    (open: boolean) => {
+      if (!open) finishWhenAnimationsComplete()
+    },
+    [finishWhenAnimationsComplete]
+  )
+
   React.useEffect(() => {
     if (!closing || modal.visible) return
 
     let active = true
-    const frame = window.requestAnimationFrame(() => {
-      const animations = (contentRef.current?.getAnimations() ?? []).filter(
-        (animation) =>
-          animation.playState !== "finished" &&
-          animation.effect?.getComputedTiming().iterations !== Infinity
-      )
+    let frame = 0
 
-      if (animations.length === 0) {
-        finishClose()
-        return
-      }
+    const waitForAnimations = () => {
+      if (finishWhenAnimationsComplete()) return
 
-      void Promise.allSettled(
-        animations.map((animation) => animation.finished)
-      ).then(() => {
-        if (active) finishClose()
-      })
-    })
+      if (active) frame = window.requestAnimationFrame(waitForAnimations)
+    }
+
+    frame = window.requestAnimationFrame(waitForAnimations)
 
     return () => {
       active = false
       window.cancelAnimationFrame(frame)
     }
-  }, [closing, finishClose, modal.visible])
+  }, [closing, finishWhenAnimationsComplete, modal.visible])
 
-  return { close, contentElement, setContentElement }
+  return {
+    close,
+    contentElement,
+    handleOpenChangeComplete,
+    setContentElement,
+  }
 }
 
 type SurfaceDialogContentProps = Omit<
@@ -231,9 +292,20 @@ function SurfaceDrawerContent({
     "drawer-overlay",
     ref
   )
+  const snapPointStyle: React.CSSProperties =
+    context.drawerSnapAxis === "y"
+      ? { height: "100dvh", maxHeight: "100dvh" }
+      : context.drawerSnapAxis === "x"
+        ? { maxWidth: "100dvw", width: "100dvw" }
+        : {}
 
   return (
-    <DrawerContent ref={setContentRef} className={className} {...props}>
+    <DrawerContent
+      ref={setContentRef}
+      className={className}
+      {...props}
+      style={{ ...snapPointStyle, ...props.style }}
+    >
       {children}
       {showCloseButton && (
         <Button
@@ -362,12 +434,16 @@ function custom<T = unknown>(
   const CustomSurfaceModal = NiceModal.create<CustomDialogSurfaceProps<T>>(
     ({ content: renderContent, options: modalOptions, resolveResult }) => {
       const modal = useModal()
-      const { close, contentElement, setContentElement } = useSurfaceLifecycle<T>(
-        modal,
-        resolveResult
-      )
+      const {
+        close,
+        contentElement,
+        handleOpenChangeComplete,
+        setContentElement,
+      } = useSurfaceLifecycle<T>(modal, resolveResult)
       const isModal = modalOptions.modal ?? true
       const isDismissible = modalOptions.dismissible ?? isModal
+
+      useNonModalPageAccess(contentElement, !isModal)
 
       React.useEffect(() => {
         if (!modal.visible || isDismissible || !isModal) return
@@ -400,13 +476,22 @@ function custom<T = unknown>(
       ])
 
       const contextValue = React.useMemo<SurfaceContextValue>(
-        () => ({ close: () => close(), modal: isModal, setContentElement }),
+        () => ({
+          close: () => close(),
+          drawerSnapAxis: null,
+          modal: isModal,
+          setContentElement,
+        }),
         [close, isModal, setContentElement]
       )
+      const compatibilityProps: SurfaceRootCompatibilityProps = {
+        onOpenChangeComplete: handleOpenChangeComplete,
+      }
 
       return (
         <SurfaceContext.Provider value={contextValue}>
           <Dialog
+            {...compatibilityProps}
             modal={isModal}
             open={modal.visible}
             onOpenChange={(open) => {
@@ -450,6 +535,7 @@ type DrawerCompatibilityProps = {
   showSwipeHandle: boolean
   dismissible: boolean
   disablePointerDismissal: boolean
+  onOpenChangeComplete: (open: boolean) => void
 }
 
 function drawerSwipeDirection(side: DrawerSide): DrawerSwipeDirection {
@@ -465,24 +551,39 @@ function openDrawer<T = unknown>(
   const CustomSurfaceDrawer = NiceModal.create<DrawerSurfaceProps<T>>(
     ({ content: renderContent, options: drawerOptions, resolveResult }) => {
       const modal = useModal()
-      const { close, setContentElement } = useSurfaceLifecycle<T>(
-        modal,
-        resolveResult
-      )
+      const {
+        close,
+        contentElement,
+        handleOpenChangeComplete,
+        setContentElement,
+      } = useSurfaceLifecycle<T>(modal, resolveResult)
       const isModal = drawerOptions.modal ?? true
       const isDismissible = drawerOptions.dismissible ?? isModal
       const side = drawerOptions.side ?? "bottom"
+      const drawerSnapAxis = drawerOptions.snapPoints?.length
+        ? side === "top" || side === "bottom"
+          ? "y"
+          : "x"
+        : null
+
+      useNonModalPageAccess(contentElement, !isModal)
       const compatibilityProps: DrawerCompatibilityProps = {
         direction: side,
         swipeDirection: drawerSwipeDirection(side),
         showSwipeHandle: side === "bottom",
         dismissible: isDismissible,
         disablePointerDismissal: !isDismissible,
+        onOpenChangeComplete: handleOpenChangeComplete,
       }
 
       const contextValue = React.useMemo<SurfaceContextValue>(
-        () => ({ close: () => close(), modal: isModal, setContentElement }),
-        [close, isModal, setContentElement]
+        () => ({
+          close: () => close(),
+          drawerSnapAxis,
+          modal: isModal,
+          setContentElement,
+        }),
+        [close, drawerSnapAxis, isModal, setContentElement]
       )
 
       return (
@@ -644,19 +745,6 @@ const dialog = {
                 }
                 defaultValue={options.defaultValue}
                 placeholder={options.placeholder}
-                onKeyDown={(event) => {
-                  options.inputProps?.onKeyDown?.(event)
-                  if (
-                    event.defaultPrevented ||
-                    event.key !== "Enter" ||
-                    event.nativeEvent.isComposing
-                  ) {
-                    return
-                  }
-
-                  event.preventDefault()
-                  void close(event.currentTarget.value)
-                }}
               />
               <div className="flex flex-row gap-3">
                 <Button
@@ -804,19 +892,6 @@ const drawer = {
                 }
                 defaultValue={options.defaultValue}
                 placeholder={options.placeholder}
-                onKeyDown={(event) => {
-                  options.inputProps?.onKeyDown?.(event)
-                  if (
-                    event.defaultPrevented ||
-                    event.key !== "Enter" ||
-                    event.nativeEvent.isComposing
-                  ) {
-                    return
-                  }
-
-                  event.preventDefault()
-                  void close(event.currentTarget.value)
-                }}
               />
             </div>
             <DrawerFooter>

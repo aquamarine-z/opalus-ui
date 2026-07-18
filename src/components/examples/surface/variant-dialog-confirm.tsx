@@ -3,7 +3,7 @@ import React from "react";
 import {dialog} from "../../../../registry/ui/surface.tsx";
 
 export default () => {
-    const [confirmResult, setConfirmResult] = React.useState<boolean | undefined>(undefined);
+    const [confirmResult, setConfirmResult] = React.useState<boolean | null | undefined>(undefined);
     const openAlertDialog = async () => {
         const result = await dialog.confirm({
             title: "Confirm Dialog",
@@ -21,7 +21,7 @@ export default () => {
     }
     return <div className={"flex flex-col items-center gap-2"}>
         <Button variant={"outline"} onClick={openAlertDialog}>Open Confirm Dialog</Button>
-        <div>Confirm result: {confirmResult !== undefined ? confirmResult.toString() : "undefined"}</div>
+        <div>Confirm result: {confirmResult === undefined ? "undefined" : String(confirmResult)}</div>
     </div>
 
 }

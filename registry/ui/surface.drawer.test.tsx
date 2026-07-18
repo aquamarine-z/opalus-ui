@@ -1,6 +1,12 @@
 import * as React from "react"
 import NiceModal from "@ebay/nice-modal-react"
-import { act, fireEvent, render, screen } from "@testing-library/react"
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { describe, expect, it } from "vitest"
 
@@ -48,9 +54,13 @@ describe("surface drawer", () => {
     const user = userEvent.setup()
     renderModalProvider()
 
+    let playState: AnimationPlayState = "running"
     let finishAnimation = () => {}
     const animationFinished = new Promise<void>((resolve) => {
-      finishAnimation = resolve
+      finishAnimation = () => {
+        playState = "finished"
+        resolve()
+      }
     })
     let settled = false
 
@@ -78,7 +88,10 @@ describe("surface drawer", () => {
               getComputedTiming: () => ({ iterations: 1 }),
             },
             finished: animationFinished,
-            playState: "running",
+            get playState() {
+              return playState
+            },
+            playbackRate: 1,
           },
         ] as unknown as Animation[],
     })
@@ -97,6 +110,31 @@ describe("surface drawer", () => {
       await animationFinished
     })
     await expect(resultPromise).resolves.toBe("complete")
+  })
+
+  it("preserves native drawer prompt validation when Enter submits", async () => {
+    const user = userEvent.setup()
+    renderModalProvider()
+    let settled = false
+
+    const resultPromise = drawer.prompt({
+      title: "Required project name",
+      inputLabel: "Project name",
+      inputProps: { required: true },
+    })
+    resultPromise.then(() => {
+      settled = true
+    })
+
+    const input = await screen.findByRole("textbox", { name: "Project name" })
+    await user.click(input)
+    await user.keyboard("{Enter}")
+
+    expect(settled).toBe(false)
+    expect(screen.getByRole("dialog", { name: "Required project name" })).toBeTruthy()
+
+    await user.type(input, "Opalus{Enter}")
+    await expect(resultPromise).resolves.toBe("Opalus")
   })
 
   it("returns selected actions, confirmation, and prompt values", async () => {
@@ -180,6 +218,16 @@ describe("surface drawer", () => {
     )
     expect(overlay === null || overlay.hidden).toBe(true)
 
+    const backgroundRoot = screen
+      .getByRole("button", { name: "Background action" })
+      .parentElement
+    expect(backgroundRoot).not.toBeNull()
+    backgroundRoot?.setAttribute("data-aria-hidden", "true")
+    backgroundRoot?.setAttribute("aria-hidden", "true")
+    await waitFor(() => {
+      expect(backgroundRoot?.hasAttribute("aria-hidden")).toBe(false)
+    })
+
     await user.click(screen.getByRole("button", { name: "Background action" }))
     expect(backgroundClicks).toBe(1)
 
@@ -208,11 +256,12 @@ describe("surface drawer", () => {
     })
 
     await screen.findByRole("dialog", { name: "Snap drawer" })
-    expect(
-      document.querySelector('[data-slot="drawer-popup"]')?.hasAttribute(
-        "data-snap-points"
-      )
-    ).toBe(true)
+    const popup = document.querySelector<HTMLElement>(
+      '[data-slot="drawer-popup"]'
+    )
+    expect(popup?.hasAttribute("data-snap-points")).toBe(true)
+    expect(popup?.style.height).toBe("100dvh")
+    expect(popup?.style.maxHeight).toBe("100dvh")
     expect(settled).toBe(false)
 
     await user.click(

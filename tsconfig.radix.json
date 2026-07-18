@@ -1,0 +1,29 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "paths": {
+      "@/components/ui/dialog": [
+        "./e2e/radix/ui/dialog.tsx"
+      ],
+      "@/components/ui/drawer": [
+        "./e2e/radix/ui/drawer.tsx"
+      ],
+      "@/*": [
+        "./src/*"
+      ]
+    }
+  },
+  "include": [
+    "e2e/radix/**/*.ts",
+    "e2e/radix/**/*.tsx",
+    "registry/ui/surface.tsx",
+    "src/components/ui/button.tsx",
+    "src/components/ui/input.tsx",
+    "src/lib/utils.ts"
+  ],
+  "exclude": [
+    "dist",
+    "dist-radix",
+    "node_modules"
+  ]
+}

@@ -21,9 +21,13 @@ describe("surface", () => {
     const user = userEvent.setup()
     renderModalProvider()
 
+    let playState: AnimationPlayState = "running"
     let finishAnimation = () => {}
     const animationFinished = new Promise<void>((resolve) => {
-      finishAnimation = resolve
+      finishAnimation = () => {
+        playState = "finished"
+        resolve()
+      }
     })
     let settled = false
 
@@ -51,7 +55,10 @@ describe("surface", () => {
               getComputedTiming: () => ({ iterations: 1 }),
             },
             finished: animationFinished,
-            playState: "running",
+            get playState() {
+              return playState
+            },
+            playbackRate: 1,
           },
         ] as unknown as Animation[],
     })
@@ -71,6 +78,41 @@ describe("surface", () => {
       await animationFinished
     })
 
+    await expect(resultPromise).resolves.toBe("complete")
+  })
+
+  it("does not let paused animations block cleanup", async () => {
+    const user = userEvent.setup()
+    renderModalProvider()
+
+    const resultPromise = dialog.custom<string>((close) => (
+      <SurfaceDialogContent showCloseButton={false}>
+        <DialogHeader>
+          <DialogTitle>Paused animation dialog</DialogTitle>
+        </DialogHeader>
+        <Button onClick={() => void close("complete")}>Complete</Button>
+      </SurfaceDialogContent>
+    ))
+
+    const dialogElement = await screen.findByRole("dialog", {
+      name: "Paused animation dialog",
+    })
+    Object.defineProperty(dialogElement, "getAnimations", {
+      configurable: true,
+      value: () =>
+        [
+          {
+            effect: {
+              getComputedTiming: () => ({ iterations: 1 }),
+            },
+            finished: new Promise<void>(() => {}),
+            playState: "paused",
+            playbackRate: 1,
+          },
+        ] as unknown as Animation[],
+    })
+
+    await user.click(screen.getByRole("button", { name: "Complete" }))
     await expect(resultPromise).resolves.toBe("complete")
   })
 
@@ -114,6 +156,33 @@ describe("surface", () => {
     })
     await user.type(input, "Opalus{Enter}")
 
+    await expect(resultPromise).resolves.toBe("Opalus")
+  })
+
+  it("preserves native prompt validation when Enter submits", async () => {
+    const user = userEvent.setup()
+    renderModalProvider()
+    let settled = false
+
+    const resultPromise = dialog.prompt({
+      title: "Required project name",
+      inputLabel: "Project name",
+      inputProps: { required: true },
+    })
+    resultPromise.then(() => {
+      settled = true
+    })
+
+    const input = await screen.findByRole("textbox", {
+      name: "Project name",
+    })
+    await user.click(input)
+    await user.keyboard("{Enter}")
+
+    expect(settled).toBe(false)
+    expect(screen.getByRole("dialog", { name: "Required project name" })).toBeTruthy()
+
+    await user.type(input, "Opalus{Enter}")
     await expect(resultPromise).resolves.toBe("Opalus")
   })
 

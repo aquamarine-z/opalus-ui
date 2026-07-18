@@ -14,6 +14,7 @@ export default defineConfig({
         processor: unified({remarkPlugins: [remarkCaptureComponent]}),
     },
     integrations: [starlight({
+        disable404Route: true,
         components: {
             // 重写默认的 `PageFrame` 组件。
             PageFrame: './src/components/override-components/PageFrame.astro',

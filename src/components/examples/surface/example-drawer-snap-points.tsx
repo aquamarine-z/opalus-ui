@@ -35,7 +35,7 @@ export default function DrawerSnapPointsExample() {
   const openDrawer = () => {
     void drawer.custom(
       (close) => <SnapDrawerContent close={close} />,
-      { side: "bottom", snapPoints: [0.35, 0.8] }
+      { side: "bottom", snapPoints: [0.35, 1] }
     )
   }
 

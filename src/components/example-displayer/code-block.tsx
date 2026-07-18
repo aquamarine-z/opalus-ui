@@ -1,7 +1,11 @@
 'use client';
 import React, {useEffect, useMemo, useState} from 'react';
-import SyntaxHighlighter from 'react-syntax-highlighter/dist/esm/prism';
-import {ghcolors, oneDark} from 'react-syntax-highlighter/dist/esm/styles/prism';
+import SyntaxHighlighter from 'react-syntax-highlighter/dist/esm/prism-light';
+import tsx from 'react-syntax-highlighter/dist/esm/languages/prism/tsx';
+import ghcolors from 'react-syntax-highlighter/dist/esm/styles/prism/ghcolors';
+import oneDark from 'react-syntax-highlighter/dist/esm/styles/prism/one-dark';
+
+SyntaxHighlighter.registerLanguage('tsx', tsx);
 
 export default function CodeBlock({code}: { code: string }) {
     const [copied, setCopied] = useState(false);

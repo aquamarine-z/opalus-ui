@@ -27,20 +27,30 @@ starts the same close sequence:
 1. The first close request stores its result and hides the NiceModal instance.
 2. Repeated close requests reuse the same close promise and cannot change the
    stored result.
-3. Surface reads the finite Web Animations attached to
-   `SurfaceDialogContent`.
-4. The public promise resolves only after those animations settle.
+3. Base UI reports its close transition through `onOpenChangeComplete`. For
+   primitives without that callback, Surface observes the actual finite Web
+   Animations attached to `SurfaceDialogContent`.
+4. The public promise resolves when no finite animation is still running.
 5. Surface resolves the NiceModal hide promise and removes the instance.
 
-Surface does not use a fixed `300ms`, `400ms`, or similar close timeout. A dialog
-without a detectable finite animation is removed on the next animation frame.
-Infinite animations are ignored. Do not leave a finite exit animation paused
-indefinitely, because its `animation.finished` promise will remain pending.
+Surface does not use a fixed JavaScript close timeout. A dialog without a
+running finite animation is removed on the next animation frame. Paused,
+cancelled, idle, zero-rate, and infinite animations never block cleanup.
 
 For animation-aware custom dialog cleanup, use `SurfaceDialogContent` as the
 rendered shadcn Dialog content. If custom content renders a raw `DialogContent`,
 Surface still cleans up the NiceModal instance, but it cannot wait for an
 unregistered content animation.
+
+## Migration From The Initial API
+
+- Replace `closeOnOverlayClick` with `dismissible`.
+- `dialog.custom`, `dialog.confirm`, and `dialog.prompt` now return `null` for
+  dismissal instead of `undefined`.
+- Treat `false` as an explicit Confirm cancellation and `null` as dismissal.
+
+These return values are part of the public contract and are shared with the
+Drawer variants.
 
 ## Shared Types
 
@@ -78,12 +88,13 @@ replace the action's internal click handler or button type.
 | `showTitleIcon` | `true` | Displays `titleIcon` or the default alert-circle icon. |
 | `titleIcon` | alert-circle icon | Accepts any React node and is hidden from the accessibility tree. |
 
-`dismissible` defaults to `true` across all variants:
+`dismissible` defaults to `true` except for alerts, which require an explicit
+acknowledgement by default:
 
 | Variant | Default | Escape |
 | --- | --- | --- |
 | `custom` | `true` | Closes the active modal dialog and returns `null`. |
-| `alert` | `true` | Closes the active modal dialog. |
+| `alert` | `false` | Closes the active modal dialog. |
 | `confirm` | `true` | Closes the active modal dialog and returns `null`. |
 | `prompt` | `true` | Closes the active modal dialog and returns `null`. |
 
@@ -216,7 +227,7 @@ dialog.confirm(options?: ConfirmDialogOptions): Promise<boolean | null>
 ```
 
 Confirm uses `role="alertdialog"`, exposes separate shadcn Button props for both
-actions, and defaults to disabling overlay dismissal. Use
+actions, and allows overlay dismissal by default. Use
 `confirmButtonProps.variant` for destructive actions without replacing the
 button implementation:
 
